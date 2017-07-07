@@ -9,7 +9,9 @@ int main(){
 
   lex.lex( "" );
 
-  pars.parse( lex.begin(), lex.end() );
+  pars.read( lex.begin(), lex.end() );
+
+  pars.parse();
 
   return 0;
 }

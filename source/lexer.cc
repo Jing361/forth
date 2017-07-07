@@ -4,21 +4,20 @@
 #include"lexer.hh"
 
 using namespace std;
-using namespace TOKEN_CLASS;
 
 void lexer::lex( const string& command ){
   stringstream ss( command );
   string word;
 
   while( ss >> word ){
-    TOKEN_CLASS cls = NONE;
+    TOKEN_CLASS cls = TOKEN_CLASS::NONE;
 
     if( word == ":" || word == ";" ){
-      cls = DEFINE;
+      cls = TOKEN_CLASS::DEFINE;
     } else if( word == "@" ){
-      cls = FETCH;
+      cls = TOKEN_CLASS::FETCH;
     } else if( word == "!" ){
-      cls = STORE;
+      cls = TOKEN_CLASS::STORE;
     } else if( isdigit( word[0] ) ){
       bool isNum = true;
 
@@ -27,28 +26,28 @@ void lexer::lex( const string& command ){
       }
 
       if( isNum ){
-        cls = NUMBER;
+        cls = TOKEN_CLASS::NUMBER;
       }
     } else if( word == "*" || word == "/" ||
                word == "+" || word == "-" ){
-      cls = MATH;
+      cls = TOKEN_CLASS::MATH;
     } else {
-      cls = WORD;
+      cls = TOKEN_CLASS::WORD;
     }
 
-    if( cls == NONE ){
+    if( cls == TOKEN_CLASS::NONE ){
       cout << "Invalid token: '" << word << "'." << endl;
     }
   }
 
-  mTokens.emplace_back( EOF, "" );
+  mTokens.emplace_back( TOKEN_CLASS::E_OF_F, "" );
 }
 
-decltype( lexer::mTokens )::iterator begin(){
+decltype( lexer::mTokens )::iterator lexer::begin(){
   return mTokens.begin();
 }
 
-decltype( lexer::mTokens )::iterator end(){
+decltype( lexer::mTokens )::iterator lexer::end(){
   return mTokens.end();
 }
 

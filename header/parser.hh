@@ -11,12 +11,15 @@
 #include"expression.hh"
 #include"function.hh"
 #include"number.hh"
+#include"operation.hh"
+#include"variable.hh"
+#include"call.hh"
 
 class parser{
 private:
   std::vector<expression> mActions;
   std::vector<std::pair<TOKEN_CLASS, std::string> > mTokens;
-  std::map<std::string, function> mDictionary;
+  std::map<std::string, std::unique_ptr<function> > mDictionary;
   std::map<std::string, int> mVariables;
   decltype( mTokens )::iterator mCurTok;
   int mVarIndex = 0;

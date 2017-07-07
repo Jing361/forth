@@ -1,5 +1,5 @@
 #ifndef __FUNCTION_HH__
-#ifndef __FUNCTION_HH__
+#define __FUNCTION_HH__
 
 #include<string>
 #include<memory>

@@ -9,6 +9,8 @@ private:
 
 public:
   operation( char op );
+
+  std::string generate_code() const;
 };
 
 #endif

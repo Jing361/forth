@@ -1,3 +1,5 @@
+#include<string>
+
 #include"lexer.hh"
 #include"parser.hh"
 
@@ -6,12 +8,15 @@ using namespace std;
 int main(){
   lexer lex;
   parser pars;
+  string line;
 
-  lex.lex( "" );
+  while( cout << ">" && cin >> line ){
+    lex.lex( line );
 
-  pars.read( lex.begin(), lex.end() );
+    pars.read( lex.begin(), lex.end() );
 
-  pars.parse();
+    pars.parse();
+  }
 
   return 0;
 }

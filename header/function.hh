@@ -1,5 +1,5 @@
-#ifndef __FUNCTION_HH__
-#define __FUNCTION_HH__
+#ifndef __FORTH_FUNCTION_HH__
+#define __FORTH_FUNCTION_HH__
 
 #include<string>
 #include<memory>
@@ -7,13 +7,13 @@
 
 #include"expression.hh"
 
-class function{
+class function_f{
 private:
   std::string mName;
   std::vector<std::unique_ptr<expression> > mBody;
 
 public:
-  function( const std::string& name, std::vector<std::unique_ptr<expression> >&& body );
+  function_f( const std::string& name, std::vector<std::unique_ptr<expression> >&& body );
 
   std::string name() const;
 

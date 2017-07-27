@@ -10,9 +10,9 @@ private:
   std::string mName;
 
 public:
-  call( const std::string& name ):
-    mName( name ){
-  }
+  call( const std::string& name );
+
+  std::string generate_code() const;
 };
 
 #endif

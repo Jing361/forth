@@ -8,9 +8,9 @@ private:
   int mValue;
 
 public:
-  number( int value ):
-    mValue( value ){
-  }
+  number( int value );
+
+  std::string generate_code() const;
 };
 
 #endif

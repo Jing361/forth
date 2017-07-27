@@ -18,6 +18,8 @@ private:
 
 public:
   variable( const std::string& name, ACTION action, int address );
+
+  std::string generate_code() const;
 };
 
 #endif

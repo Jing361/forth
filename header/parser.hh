@@ -1,6 +1,7 @@
 #ifndef __PARSER_HH__
 #define __PARSER_HH__
 
+#include<iostream>
 #include<vector>
 #include<utility>
 #include<string>
@@ -17,21 +18,25 @@
 
 class parser{
 private:
-  std::vector<expression> mActions;
+  std::vector<std::unique_ptr<expression> > mActions;
   std::vector<std::pair<TOKEN_CLASS, std::string> > mTokens;
-  std::map<std::string, std::unique_ptr<function> > mDictionary;
+  std::map<std::string, std::unique_ptr<function_f> > mDictionary;
   std::map<std::string, int> mVariables;
   decltype( mTokens )::iterator mCurTok;
   int mVarIndex = 0;
 
-  std::unique_ptr<expression> log_error( const std::string& str );
+  template<typename T>
+  std::unique_ptr<T> log_error( const std::string& str ){
+    std::cout << "Log Error: " << str << std::endl;
+    return nullptr;
+  }
 
   void handle_definition();
   void handle_word();
   void handle_math();
   void handle_number();
 
-  std::unique_ptr<function> parse_definition();
+  std::unique_ptr<function_f> parse_definition();
   std::unique_ptr<expression> parse_word();
   std::unique_ptr<number> parse_number();
   std::unique_ptr<operation> parse_operation();

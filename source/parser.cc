@@ -1,4 +1,3 @@
-#include<iostream>
 #include<sstream>
 
 #include"parser.hh"
@@ -7,11 +6,6 @@ using namespace std;
 
 void parser::addRead( TOKEN_CLASS cls, const string& str ){
   mTokens.emplace_back( cls, str );
-}
-
-unique_ptr<expression> parser::log_error( const string& str ){
-  cout << "Log Error: " << str << endl;
-  return nullptr;
 }
 
 void parser::parse(){
@@ -62,7 +56,7 @@ void parser::handle_definition(){
 void parser::handle_word(){
   if( auto word = parse_word() ){
     cout << "Parsed word.\n" << endl;
-    mActions.emplace_back( word );
+    mActions.push_back( move( word ) );
   } else {
     ++mCurTok;
   }
@@ -71,7 +65,7 @@ void parser::handle_word(){
 void parser::handle_math(){
   if( auto op = parse_operation() ){
     cout << "Parsed operation.\n" << endl;
-    mActions.emplace_back( op );
+    mActions.push_back( move( op ) );
   } else {
     ++mCurTok;
   }
@@ -80,15 +74,15 @@ void parser::handle_math(){
 void parser::handle_number(){
   if( auto num = parse_number() ){
     cout << "Parsed number.\n" << endl;
-    mActions.emplace_back( num );
+    mActions.push_back( move( num ) );
   } else {
     ++mCurTok;
   }
 }
 
-unique_ptr<function> parser::parse_definition(){
+unique_ptr<function_f> parser::parse_definition(){
   if( mCurTok->second != ":" ){
-    return log_error( string( "Bad token\t" ) + mCurTok->second + ".\nExpected ':'\n" );
+    return log_error<function_f>( string( "Bad token\t" ) + mCurTok->second + ".\nExpected ':'\n" );
   } else {
     ++mCurTok;
   }
@@ -107,23 +101,23 @@ unique_ptr<function> parser::parse_definition(){
     break;
 
     case TOKEN_CLASS::MATH:
-      body.emplace_back( move( parse_math() ) );
+      body.emplace_back( move( parse_operation() ) );
     break;
 
     default:
-      return log_error( string( "Bad token\t" ) + mCurTok->second + "." );
+      return log_error<function_f>( string( "Bad token\t" ) + mCurTok->second + "." );
     break;
     }
   }
 
-  return make_unique<function>( name, move( body ) );
+  return make_unique<function_f>( name, move( body ) );
 }
 
 unique_ptr<expression> parser::parse_word(){
   string word = ( mCurTok++ )->second;
 
   if( mCurTok->first != TOKEN_CLASS::WORD ){
-    return log_error( string( "Invalid token:\t" ) + word + "\nExpected a word." );
+    return log_error<expression>( string( "Invalid token:\t" ) + word + "\nExpected a word." );
   }
 
   if( mCurTok->first == TOKEN_CLASS::STORE ){
@@ -144,7 +138,7 @@ unique_ptr<expression> parser::parse_word(){
 
       return make_unique<variable>( word, ACTION::FETCH, mVariables[word] );
     } catch( out_of_range& ) {
-      return log_error( string( "Cannot fetch unset variable:\t" ) + word + "." );
+      return log_error<expression>( string( "Cannot fetch unset variable:\t" ) + word + "." );
     }
   } else {
     try{
@@ -152,7 +146,7 @@ unique_ptr<expression> parser::parse_word(){
 
       return make_unique<call>( word );
     } catch( out_of_range& ) {
-      return log_error( string( "Use of undefined word:\t" ) + word + "." );
+      return log_error<expression>( string( "Use of undefined word:\t" ) + word + "." );
     }
   }
 }
@@ -165,7 +159,7 @@ unique_ptr<number> parser::parse_number(){
   if( ss >> value ){
     return make_unique<number>( value );
   } else {
-    return log_error( string( "Expected a number.  Got:\t" ) + word "." );
+    return log_error<number>( string( "Expected a number. Got:\t" ) + word + "." );
   }
 }
 
@@ -175,7 +169,7 @@ unique_ptr<operation> parser::parse_operation(){
   if( mCurTok->first != TOKEN_CLASS::MATH ){
     ++mCurTok;
 
-    return log_error( string( "Expected an operator.  Got:\t" ) + op + "." );
+    return log_error<operation>( string( "Expected an operator. Got:\t" ) + op + "." );
   } else {
     return make_unique<operation>( op[0] );
   }

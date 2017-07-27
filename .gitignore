@@ -1,0 +1,6 @@
+binary/*
+depend/*
+object/*
+*.o
+*.exe
+*.d

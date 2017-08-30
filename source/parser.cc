@@ -73,17 +73,17 @@ void parser::handle_word(){
   if( mCurTok->second == "." ){
     cout << mStack.top() << endl;
     mStack.pop();
-
-    ++mCurTok;
-    return;
-  }
-
-  if( auto word = parse_word() ){
-    cout << "Parsed word.\n" << endl;
-    mActions.push_back( move( word ) );
   } else {
-    ++mCurTok;
+    string word( mCurTok->second );
+
+    try{
+      mDictionary.at( word );
+    } catch( out_of_range& ){
+      cout << "Use of undefined word:\t" << word << endl;
+    }
   }
+
+  ++mCurTok;
 }
 
 void parser::handle_math(){
@@ -184,6 +184,8 @@ unique_ptr<function_f> parser::parse_definition(){
     break;
     }
   }
+
+  ++mCurTok;
 
   return make_unique<function_f>( name, move( body ) );
 }

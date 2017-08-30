@@ -79,7 +79,12 @@ void parser::handle_word(){
     try{
       mDictionary.at( word );
     } catch( out_of_range& ){
-      cout << "Use of undefined word:\t" << word << endl;
+      try{
+        auto idx = mVarIndexes.at( word );
+        mStack.push( mVariables[idx] );
+      } catch( out_of_range& ){
+        cout << "Use of undefined word:\t" << word << endl;
+      }
     }
   }
 

@@ -10,6 +10,7 @@ enum class TOKEN_CLASS{
   WORD,
   NUMBER,
   MATH,
+  DECLARE,
   E_OF_F,
 };
 

@@ -28,6 +28,8 @@ void lexer::lex( const string& command ){
     } else if( word == "*" || word == "/" ||
                word == "+" || word == "-" ){
       cls = TOKEN_CLASS::MATH;
+    } else if( word == "VARIABLE" ){
+      cls = TOKEN_CLASS::DECLARE;
     } else {
       cls = TOKEN_CLASS::WORD;
     }

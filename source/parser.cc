@@ -24,7 +24,13 @@ void parser::parse(){
     break;
 
     case TOKEN_CLASS::FETCH:
+      handle_fetch();
+    break;
+
     case TOKEN_CLASS::STORE:
+      handle_store();
+    break;
+
     case TOKEN_CLASS::WORD:
       handle_word();
     break;
@@ -86,6 +92,31 @@ void parser::handle_number(){
   }
 }
 
+void parser::handle_fetch(){
+  try{
+    mVariables.at( word );
+
+    ++mCurTok;
+
+    return make_unique<variable>( word, ACTION::FETCH, mVariables[word] );
+  } catch( out_of_range& ) {
+    return log_error<expression>( string( "Cannot fetch unset variable:\t" ) + word + "." );
+  }
+}
+
+void parser::handle_store(){
+/*! @todo variables should be declared using VARIABLE keyword, not by first store */
+  try{
+    mVariables.at( word );
+  } catch( out_of_range& ) {
+    mVariables[word] = mVarIndex++;
+  }
+
+  ++mCurTok;
+
+  return make_unique<variable>( word, ACTION::STORE, mVariables[word] );
+}
+
 unique_ptr<function_f> parser::parse_definition(){
   if( mCurTok->second != ":" ){
     return log_error<function_f>( string( "Bad token\t" ) + mCurTok->second + ".\nExpected ':'\n" );
@@ -122,37 +153,12 @@ unique_ptr<function_f> parser::parse_definition(){
 unique_ptr<expression> parser::parse_word(){
   string word = mCurTok->second;
 
-  if( mCurTok->first == TOKEN_CLASS::STORE ){
-/*! @todo variables should be declared using VARIABLE keyword, not by first store */
-    try{
-      mVariables.at( word );
-    } catch( out_of_range& ) {
-      mVariables[word] = mVarIndex++;
-    }
+  try{
+    mDictionary.at( word );
 
-    ++mCurTok;
-
-    return make_unique<variable>( word, ACTION::STORE, mVariables[word] );
-  } else if( mCurTok->first == TOKEN_CLASS::FETCH ){
-    try{
-      mVariables.at( word );
-
-      ++mCurTok;
-
-      return make_unique<variable>( word, ACTION::FETCH, mVariables[word] );
-    } catch( out_of_range& ) {
-      return log_error<expression>( string( "Cannot fetch unset variable:\t" ) + word + "." );
-    }
-  } else if( mCurTok->first == TOKEN_CLASS::WORD ){
-    try{
-      mDictionary.at( word );
-
-      return make_unique<call>( word );
-    } catch( out_of_range& ) {
-      return log_error<expression>( string( "Use of undefined word:\t" ) + word + "." );
-    }
-  } else {
-    return log_error<expression>( string( "Invalid token:\t" ) + word + "\nExpected a word." );
+    return make_unique<call>( word );
+  } catch( out_of_range& ) {
+    return log_error<expression>( string( "Use of undefined word:\t" ) + word + "." );
   }
 }
 

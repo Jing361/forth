@@ -35,6 +35,8 @@ private:
   void handle_word();
   void handle_math();
   void handle_number();
+  void handle_fetch();
+  void handle_store();
 
   std::unique_ptr<function_f> parse_definition();
   std::unique_ptr<expression> parse_word();

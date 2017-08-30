@@ -7,6 +7,7 @@
 #include<string>
 #include<map>
 #include<memory>
+#include<stack>
 
 #include"tokens.hh"
 #include"expression.hh"
@@ -21,9 +22,11 @@ private:
   std::vector<std::unique_ptr<expression> > mActions;
   std::vector<std::pair<TOKEN_CLASS, std::string> > mTokens;
   std::map<std::string, std::unique_ptr<function_f> > mDictionary;
-  std::map<std::string, int> mVariables;
+  std::map<std::string, int> mVarIndexes;
+  std::vector<long> mVariables;
   decltype( mTokens )::iterator mCurTok;
   int mVarIndex = 0;
+  std::stack<long> mStack;
 
   template<typename T>
   std::unique_ptr<T> log_error( const std::string& str ){
@@ -35,6 +38,7 @@ private:
   void handle_word();
   void handle_math();
   void handle_number();
+  void handle_declare();
   void handle_fetch();
   void handle_store();
 

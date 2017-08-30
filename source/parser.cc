@@ -23,6 +23,10 @@ void parser::parse(){
       handle_definition();
     break;
 
+    case TOKEN_CLASS::DECLARE:
+      handle_declare();
+    break;
+
     case TOKEN_CLASS::FETCH:
       handle_fetch();
     break;
@@ -66,6 +70,14 @@ void parser::handle_definition(){
 }
 
 void parser::handle_word(){
+  if( mCurTok->second == "." ){
+    cout << mStack.top() << endl;
+    mStack.pop();
+
+    ++mCurTok;
+    return;
+  }
+
   if( auto word = parse_word() ){
     cout << "Parsed word.\n" << endl;
     mActions.push_back( move( word ) );
@@ -75,46 +87,72 @@ void parser::handle_word(){
 }
 
 void parser::handle_math(){
-  if( auto op = parse_operation() ){
-    cout << "Parsed operation.\n" << endl;
-    mActions.push_back( move( op ) );
-  } else {
-    ++mCurTok;
+  long result;
+  auto lhs = mStack.top();
+  mStack.pop();
+  auto rhs = mStack.top();
+  mStack.pop();
+
+  if( mCurTok->second == "+" ){
+    result = lhs + rhs;
+  } else if( mCurTok->second == "-" ){
+    result = lhs - rhs;
+  } else if( mCurTok->second == "*" ){
+    result = lhs * rhs;
+  } else if( mCurTok->second == "/" ){
+    result = lhs / rhs;
   }
+
+  mStack.push( result );
+
+  ++mCurTok;
 }
 
 void parser::handle_number(){
-  if( auto num = parse_number() ){
-    cout << "Parsed number.\n" << endl;
-    mActions.push_back( move( num ) );
-  } else {
-    ++mCurTok;
-  }
+  stringstream ss( ( ++mCurTok )->second );
+  long value;
+
+  ss >> value;
+
+  mStack.push( value );
 }
 
-void parser::handle_fetch(){
+void parser::handle_declare(){
+  string word = ( ++mCurTok )->second;
+
   try{
-    mVariables.at( word );
-
-    ++mCurTok;
-
-    return make_unique<variable>( word, ACTION::FETCH, mVariables[word] );
-  } catch( out_of_range& ) {
-    return log_error<expression>( string( "Cannot fetch unset variable:\t" ) + word + "." );
-  }
-}
-
-void parser::handle_store(){
-/*! @todo variables should be declared using VARIABLE keyword, not by first store */
-  try{
-    mVariables.at( word );
-  } catch( out_of_range& ) {
-    mVariables[word] = mVarIndex++;
+    /*! @todo should probably throw error for redeclaring */
+    mVarIndexes.at( word );
+  } catch( out_of_range& ){
+    mVarIndexes[word] = mVarIndex++;
+    mVariables.push_back( 0 );
   }
 
   ++mCurTok;
+}
 
-  return make_unique<variable>( word, ACTION::STORE, mVariables[word] );
+void parser::handle_fetch(){
+  auto index = mStack.top();
+
+  mStack.pop();
+
+  mStack.push( mVariables[index] );
+
+  ++mCurTok;
+}
+
+void parser::handle_store(){
+  auto index = mStack.top();
+
+  mStack.pop();
+
+  auto value = mStack.top();
+
+  mStack.pop();
+
+  mVariables[index] = value;
+
+  ++mCurTok;
 }
 
 unique_ptr<function_f> parser::parse_definition(){

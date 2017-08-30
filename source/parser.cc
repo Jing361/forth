@@ -87,7 +87,7 @@ void parser::handle_word(){
 }
 
 void parser::handle_math(){
-  long result;
+  decltype( mStack )::value_type result;
   auto lhs = mStack.top();
   mStack.pop();
   auto rhs = mStack.top();
@@ -109,8 +109,8 @@ void parser::handle_math(){
 }
 
 void parser::handle_number(){
-  stringstream ss( ( ++mCurTok )->second );
-  long value;
+  stringstream ss( ( mCurTok++ )->second );
+  decltype( mStack )::value_type value;
 
   ss >> value;
 

@@ -19,13 +19,10 @@ void lexer::lex( const string& command ){
     } else if( word == "!" ){
       cls = TOKEN_CLASS::STORE;
     } else if( isdigit( word[0] ) ){
-      bool isNum = true;
+      stringstream ns( word );
+      int testNum;
 
-      for( auto digit : word ){
-        isNum = isNum && isdigit( digit );
-      }
-
-      if( isNum ){
+      if( ns >> testNum ){
         cls = TOKEN_CLASS::NUMBER;
       }
     } else if( word == "*" || word == "/" ||
@@ -37,10 +34,16 @@ void lexer::lex( const string& command ){
 
     if( cls == TOKEN_CLASS::NONE ){
       cout << "Invalid token: '" << word << "'." << endl;
+    } else {
+      mTokens.emplace_back( cls, word );
     }
   }
 
   mTokens.emplace_back( TOKEN_CLASS::E_OF_F, "" );
+}
+
+void lexer::reset(){
+  mTokens.clear();
 }
 
 decltype( lexer::mTokens )::iterator lexer::begin(){

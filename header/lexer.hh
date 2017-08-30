@@ -13,6 +13,7 @@ private:
 
 public:
   void lex( const std::string& command );
+  void reset();
 
   decltype( mTokens )::iterator begin();
   decltype( mTokens )::iterator end();

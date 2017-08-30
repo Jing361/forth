@@ -23,6 +23,8 @@ void parser::parse(){
       handle_definition();
     break;
 
+    case TOKEN_CLASS::FETCH:
+    case TOKEN_CLASS::STORE:
     case TOKEN_CLASS::WORD:
       handle_word();
     break;
@@ -40,7 +42,7 @@ void parser::parse(){
     break;
 
     default:
-      cout << "Unexpected token:\t" << mCurTok->second << endl;
+      cout << "Unexpected token:\t" << ( mCurTok++ )->second << endl;
     break;
     }
   }
@@ -121,6 +123,7 @@ unique_ptr<expression> parser::parse_word(){
   string word = mCurTok->second;
 
   if( mCurTok->first == TOKEN_CLASS::STORE ){
+/*! @todo variables should be declared using VARIABLE keyword, not by first store */
     try{
       mVariables.at( word );
     } catch( out_of_range& ) {

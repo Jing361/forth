@@ -10,7 +10,7 @@ int main(){
   parser pars;
   string line;
 
-  while( cout << ">" && cin >> line ){
+  while( cout << ">" && getline( cin, line ) ){
     lex.lex( line );
 
     pars.read( lex.begin(), lex.end() );

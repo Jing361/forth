@@ -16,6 +16,8 @@ int main(){
     pars.read( lex.begin(), lex.end() );
 
     pars.parse();
+
+    lex.reset();
   }
 
   return 0;

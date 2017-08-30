@@ -9,6 +9,10 @@ void parser::addRead( TOKEN_CLASS cls, const string& str ){
 }
 
 void parser::parse(){
+  if( mTokens.empty() ){
+    return;
+  }
+
   bool not_eof = true;
 
   mCurTok = mTokens.begin();
@@ -114,11 +118,7 @@ unique_ptr<function_f> parser::parse_definition(){
 }
 
 unique_ptr<expression> parser::parse_word(){
-  string word = ( mCurTok++ )->second;
-
-  if( mCurTok->first != TOKEN_CLASS::WORD ){
-    return log_error<expression>( string( "Invalid token:\t" ) + word + "\nExpected a word." );
-  }
+  string word = mCurTok->second;
 
   if( mCurTok->first == TOKEN_CLASS::STORE ){
     try{
@@ -140,7 +140,7 @@ unique_ptr<expression> parser::parse_word(){
     } catch( out_of_range& ) {
       return log_error<expression>( string( "Cannot fetch unset variable:\t" ) + word + "." );
     }
-  } else {
+  } else if( mCurTok->first == TOKEN_CLASS::WORD ){
     try{
       mDictionary.at( word );
 
@@ -148,6 +148,8 @@ unique_ptr<expression> parser::parse_word(){
     } catch( out_of_range& ) {
       return log_error<expression>( string( "Use of undefined word:\t" ) + word + "." );
     }
+  } else {
+    return log_error<expression>( string( "Invalid token:\t" ) + word + "\nExpected a word." );
   }
 }
 

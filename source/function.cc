@@ -2,16 +2,18 @@
 
 #include<function.hh>
 
-function_f::function_f( const std::string& name, std::vector<std::unique_ptr<expression> >&& body ):
+using namespace std;
+
+function_f::function_f( const string& name, vector<string>&& body ):
   mName( name ),
   mBody( move( body ) ){
 }
 
-std::string function_f::name() const{
-  return "func name";
+string function_f::name() const{
+  return mName;
 }
 
-std::string function_f::generate() const{
-  return "function";
+vector<string> function_f::code() const{
+  return mBody;
 }
 

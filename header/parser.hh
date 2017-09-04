@@ -21,7 +21,7 @@ class parser{
 private:
   std::vector<std::unique_ptr<expression> > mActions;
   std::vector<std::pair<TOKEN_CLASS, std::string> > mTokens;
-  std::map<std::string, std::unique_ptr<function_f> > mDictionary;
+  std::map<std::string, std::vector<std::string> > mDictionary;
   std::map<std::string, int> mVarIndexes;
   std::vector<long> mVariables;
   decltype( mTokens )::iterator mCurTok;
@@ -42,10 +42,7 @@ private:
   void handle_fetch();
   void handle_store();
 
-  std::unique_ptr<function_f> parse_definition();
-  std::unique_ptr<expression> parse_word();
-  std::unique_ptr<number> parse_number();
-  std::unique_ptr<operation> parse_operation();
+  function_f parse_definition();
 
 public:
   template<typename inputIter>

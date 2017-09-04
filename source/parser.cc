@@ -61,9 +61,11 @@ void parser::parse(){
 }
 
 void parser::handle_definition(){
-  if( auto def = parse_definition() ){
+  auto def = parse_definition();
+
+  if( !def.code().empty() ){
     cout << "Parsed definition.\n" << endl;
-    mDictionary[def->name()] = move( def );
+    mDictionary[def.name()] = move( def.code() );
   } else {
     ++mCurTok;
   }
@@ -160,74 +162,23 @@ void parser::handle_store(){
   ++mCurTok;
 }
 
-unique_ptr<function_f> parser::parse_definition(){
+function_f parser::parse_definition(){
   if( mCurTok->second != ":" ){
-    return log_error<function_f>( string( "Bad token\t" ) + mCurTok->second + ".\nExpected ':'\n" );
+    cout << "Bod token:\t" << mCurTok->second << "\nExpected:\t':'" << endl;
+    return function_f( "", vector<string>() );
   } else {
     ++mCurTok;
   }
 
   string name( ( mCurTok++ )->second );
-  vector<unique_ptr<expression> > body;
+  vector<string> body;
 
   while( mCurTok->second != ";" ){
-    switch( mCurTok->first ){
-    case TOKEN_CLASS::WORD:
-      body.emplace_back( move( parse_word() ) );
-    break;
-
-    case TOKEN_CLASS::NUMBER:
-      body.emplace_back( move( parse_number() ) );
-    break;
-
-    case TOKEN_CLASS::MATH:
-      body.emplace_back( move( parse_operation() ) );
-    break;
-
-    default:
-      return log_error<function_f>( string( "Bad token\t" ) + mCurTok->second + "." );
-    break;
-    }
+    body.push_back( ( mCurTok++ )->second );
   }
 
   ++mCurTok;
 
-  return make_unique<function_f>( name, move( body ) );
-}
-
-unique_ptr<expression> parser::parse_word(){
-  string word = mCurTok->second;
-
-  try{
-    mDictionary.at( word );
-
-    return make_unique<call>( word );
-  } catch( out_of_range& ) {
-    return log_error<expression>( string( "Use of undefined word:\t" ) + word + "." );
-  }
-}
-
-unique_ptr<number> parser::parse_number(){
-  string word( ( mCurTok++ )->second );
-  stringstream ss( word );
-  int value;
-
-  if( ss >> value ){
-    return make_unique<number>( value );
-  } else {
-    return log_error<number>( string( "Expected a number. Got:\t" ) + word + "." );
-  }
-}
-
-unique_ptr<operation> parser::parse_operation(){
-  string op( mCurTok->second );
-
-  if( mCurTok->first != TOKEN_CLASS::MATH ){
-    ++mCurTok;
-
-    return log_error<operation>( string( "Expected an operator. Got:\t" ) + op + "." );
-  } else {
-    return make_unique<operation>( op[0] );
-  }
+  return function_f( name, move( body ) );
 }
 

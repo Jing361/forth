@@ -10,14 +10,14 @@
 class function_f{
 private:
   std::string mName;
-  std::vector<std::unique_ptr<expression> > mBody;
+  std::vector<std::string> mBody;
 
 public:
-  function_f( const std::string& name, std::vector<std::unique_ptr<expression> >&& body );
+  function_f( const std::string& name, std::vector<std::string>&& body );
 
   std::string name() const;
 
-  std::string generate() const;
+  std::vector<std::string> code() const;
 };
 
 #endif

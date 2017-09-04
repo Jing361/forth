@@ -1,6 +1,7 @@
 #include<sstream>
 
 #include"parser.hh"
+#include"lexer.hh"
 
 using namespace std;
 
@@ -78,8 +79,21 @@ void parser::handle_word(){
   } else {
     string word( mCurTok->second );
 
+    /* @todo the definition will be lexed here; but it should be lexed when the definition is parsed */
     try{
-      mDictionary.at( word );
+      auto code = mDictionary.at( word );
+      lexer lex;
+      string line;
+
+      ++mCurTok;
+      mTokens.erase( mTokens.cbegin(), mCurTok );
+      for( auto it : code ){
+        line += it;
+      }
+      lex.lex( line );
+
+      mTokens.insert( mTokens.cbegin(), lex.begin(), lex.end() );
+      mCurTok = mTokens.begin();
     } catch( out_of_range& ){
       try{
         auto idx = mVarIndexes.at( word );

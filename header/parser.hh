@@ -19,7 +19,6 @@
 
 class parser{
 private:
-  std::vector<std::unique_ptr<expression> > mActions;
   std::vector<std::pair<TOKEN_CLASS, std::string> > mTokens;
   std::map<std::string, std::vector<std::string> > mDictionary;
   std::map<std::string, int> mVarIndexes;

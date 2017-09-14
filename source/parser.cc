@@ -76,6 +76,7 @@ void parser::handle_word(){
   if( mCurTok->second == "." ){
     cout << mStack.top() << endl;
     mStack.pop();
+    ++mCurTok;
   } else {
     string word( mCurTok->second );
 
@@ -89,22 +90,18 @@ void parser::handle_word(){
       mTokens.erase( mTokens.cbegin(), mCurTok );
       for( auto it : code ){
         line += it;
+        line += ' ';
       }
       lex.lex( line );
 
       mTokens.insert( mTokens.cbegin(), lex.begin(), lex.end() );
       mCurTok = mTokens.begin();
     } catch( out_of_range& ){
-      try{
-        auto idx = mVarIndexes.at( word );
-        mStack.push( mVariables[idx] );
-      } catch( out_of_range& ){
-        cout << "Use of undefined word:\t" << word << endl;
-      }
+      // allow map exception to be forwarded
+      auto idx = mVarIndexes.at( word );
+      mStack.push( mVariables[idx] );
     }
   }
-
-  ++mCurTok;
 }
 
 void parser::handle_math(){

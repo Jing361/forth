@@ -79,7 +79,7 @@ $(CREATEDIRS):
 #   fmt -1: list words one per line
 #   sed:    strip leading spaces
 #   sed:    add trailing colons
-$(objdir)/%.o:|$(DIRS)
+$(objdir)/%.o:|$(CREATEDIRS)
 	$(CC) -c -MMD -MP -MF $(depdir)/$*.d $(sourcedir)/$*$(sourceextension) $(FLAGS) $(INCLUDES) -o $@
 
 endif

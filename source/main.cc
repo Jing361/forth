@@ -1,22 +1,20 @@
 #include<string>
+#include<iostream>
 
-#include"lexer.hh"
-#include"parser.hh"
+#include"FORTH.hh"
 
 using namespace std;
 
 int main(){
-  parser pars;
+  FORTH forth;
   string line;
 
   while( cout << ">" && getline( cin, line ) ){
-    lexer lex;
+    forth.read( line );
 
-    lex.lex( line );
+    forth.execute();
 
-    pars.read( lex.begin(), lex.end() );
-
-    pars.parse();
+    cout << " ok" << endl;
   }
 
   return 0;

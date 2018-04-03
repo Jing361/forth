@@ -13,6 +13,9 @@
 using address_t = unsigned long;
 using data_t = long;
 
+/*! @todo current token may want to be tracked as an iterator so that code is
+ * not disposed of when it may be in a loop or conditional
+ */
 class FORTH{
 private:
   /*! @todo it's possible to merge the data and call stack and main memory all
@@ -31,6 +34,7 @@ private:
   void handle_fetch();
   void handle_store();
   void handle_word();
+  void handle_branch();
 
 public:
   FORTH();

@@ -3,14 +3,13 @@
 
 enum class TOKEN{
   NONE,
-  SPACE,
   STORE,
   FETCH,
   DEFINE,
   WORD,
   NUMBER,
-  MATH,
   DECLARE,
+  BRANCH,
   E_OF_F,
 };
 

@@ -15,6 +15,8 @@ static TOKEN classify( const std::string& word ){
     return TOKEN::STORE;
   } else if( word == "VARIABLE" ){
     return TOKEN::DECLARE;
+  } else if( word == "IF" || word == "ELSE" || word == "THEN" ){
+    return TOKEN::BRANCH;
   } else {
     return TOKEN::WORD;
   }
@@ -91,6 +93,9 @@ void FORTH::handle_word(){
   } else {
     mDictionary.at( word )();
   }
+}
+
+void FORTH::handle_branch(){
 }
 
 FORTH::FORTH(){
@@ -243,6 +248,10 @@ void FORTH::execute(){
 
     case TOKEN::WORD:
       handle_word();
+    break;
+
+    case TOKEN::BRANCH:
+      handle_branch();
     break;
 
     default:

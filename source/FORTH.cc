@@ -219,7 +219,7 @@ FORTH::FORTH()
         auto rhs = mDataStack.top();
         mDataStack.pop();
 
-        mDataStack.push( lhs > rhs );
+        mDataStack.push( -( lhs > rhs ) );
       }
     },
     {"<",
@@ -230,7 +230,18 @@ FORTH::FORTH()
         auto rhs = mDataStack.top();
         mDataStack.pop();
 
-        mDataStack.push( lhs < rhs );
+        mDataStack.push( -( lhs < rhs ) );
+      }
+    },
+    {"=",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
+
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( -( lhs == rhs ) );
       }
     }
   }){

@@ -23,8 +23,8 @@ private:
    * to main memory.
    */
   std::deque<std::pair<TOKEN, std::string> > mTokens;
-  std::stack<address_t> mDataStack;
-  std::stack<address_t> mCallStack;
+  std::stack<data_t> mDataStack;
+  std::stack<data_t> mCallStack;
   std::array<data_t, 256> mMainMem;
   std::map<std::string, std::function<void()> > mDictionary;
   int mAddressCounter = 0;

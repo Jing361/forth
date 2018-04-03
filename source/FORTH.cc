@@ -110,6 +110,48 @@ FORTH::FORTH(){
     mDataStack.pop();
   };
 
+  mDictionary["DUP"] = [this](){
+    mDataStack.push( mDataStack.top() );
+  };
+
+  mDictionary["SWAP"] = [this](){
+    auto top = mDataStack.top();
+    mDataStack.pop();
+
+    auto two = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( top );
+    mDataStack.push( two );
+  };
+
+  mDictionary["OVER"] = [this](){
+    auto top = mDataStack.top();
+    mDataStack.pop();
+
+    auto two = mDataStack.top();
+
+    mDataStack.push( top );
+    mDataStack.push( two );
+  };
+
+  mDictionary["DROP"] = [this](){
+    mDataStack.pop();
+  };
+
+  mDictionary[".S"] = [this](){
+    auto stack_cp = mDataStack;
+
+    while( !stack_cp.empty() ){
+      cout << stack_cp.top() << " ";
+      stack_cp.pop();
+    }
+  };
+
+  mDictionary["ROT"] = [this](){
+    //! @todo implement ROT
+  };
+
   mDictionary["+"] = [this](){
     auto lhs = mDataStack.top();
     mDataStack.pop();
@@ -168,10 +210,6 @@ FORTH::FORTH(){
     mDataStack.pop();
 
     mDataStack.push( lhs < rhs );
-  };
-
-  mDictionary["DUP"] = [this](){
-    mDataStack.push( mDataStack.top() );
   };
 }
 

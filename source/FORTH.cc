@@ -98,124 +98,142 @@ void FORTH::handle_word(){
 void FORTH::handle_branch(){
 }
 
-FORTH::FORTH(){
-  mDictionary["."] = [this](){
-    cout << mDataStack.top();
+FORTH::FORTH()
+  : mDictionary(
+    {{".",
+      [this](){
+        cout << mDataStack.top();
 
-    mDataStack.pop();
-  };
+        mDataStack.pop();
+      }
+    },
+    {"CR",
+      [](){
+        cout << endl;
+      }
+    },
+    {"EMIT",
+      [this](){
+        cout << ( char ) mDataStack.top();
 
-  mDictionary["CR"] = [](){
-    cout << endl;
-  };
+        mDataStack.pop();
+      }
+    },
+    {"DUP",
+      [this](){
+        mDataStack.push( mDataStack.top() );
+      }
+    },
+    {"SWAP",
+      [this](){
+        auto top = mDataStack.top();
+        mDataStack.pop();
 
-  mDictionary["EMIT"] = [this](){
-    cout << ( char ) mDataStack.top();
+        auto two = mDataStack.top();
+        mDataStack.pop();
 
-    mDataStack.pop();
-  };
+        mDataStack.push( top );
+        mDataStack.push( two );
+      }
+    },
+    {"OVER",
+      [this](){
+        auto top = mDataStack.top();
+        mDataStack.pop();
 
-  mDictionary["DUP"] = [this](){
-    mDataStack.push( mDataStack.top() );
-  };
+        auto two = mDataStack.top();
 
-  mDictionary["SWAP"] = [this](){
-    auto top = mDataStack.top();
-    mDataStack.pop();
+        mDataStack.push( top );
+        mDataStack.push( two );
+      }
+    },
+    {"DROP",
+      [this](){
+        mDataStack.pop();
+      }
+    },
+    {".S",
+      [this](){
+        auto stack_cp = mDataStack;
 
-    auto two = mDataStack.top();
-    mDataStack.pop();
+        while( !stack_cp.empty() ){
+          cout << stack_cp.top() << " ";
+          stack_cp.pop();
+        }
+      }
+    },
+    {"ROT",
+      [this](){
+        //! @todo implement ROT
+      }
+    },
+    {"+",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
 
-    mDataStack.push( top );
-    mDataStack.push( two );
-  };
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
 
-  mDictionary["OVER"] = [this](){
-    auto top = mDataStack.top();
-    mDataStack.pop();
+        mDataStack.push( lhs + rhs );
+      }
+    },
+    {"-",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
 
-    auto two = mDataStack.top();
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
 
-    mDataStack.push( top );
-    mDataStack.push( two );
-  };
+        mDataStack.push( lhs - rhs );
+      }
+    },
+    {"*",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
 
-  mDictionary["DROP"] = [this](){
-    mDataStack.pop();
-  };
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
 
-  mDictionary[".S"] = [this](){
-    auto stack_cp = mDataStack;
+        mDataStack.push( lhs * rhs );
+      }
+    },
+    {"/",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
 
-    while( !stack_cp.empty() ){
-      cout << stack_cp.top() << " ";
-      stack_cp.pop();
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( lhs / rhs );
+      }
+    },
+    {">",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
+
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( lhs > rhs );
+      }
+    },
+    {"<",
+      [this](){
+        auto lhs = mDataStack.top();
+        mDataStack.pop();
+
+        auto rhs = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( lhs < rhs );
+      }
     }
-  };
-
-  mDictionary["ROT"] = [this](){
-    //! @todo implement ROT
-  };
-
-  mDictionary["+"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs + rhs );
-  };
-
-  mDictionary["-"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs - rhs );
-  };
-
-  mDictionary["*"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs * rhs );
-  };
-
-  mDictionary["/"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs / rhs );
-  };
-
-  mDictionary[">"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs > rhs );
-  };
-
-  mDictionary["<"] = [this](){
-    auto lhs = mDataStack.top();
-    mDataStack.pop();
-
-    auto rhs = mDataStack.top();
-    mDataStack.pop();
-
-    mDataStack.push( lhs < rhs );
-  };
+  }){
 }
 
 void FORTH::read( const std::string& text ){

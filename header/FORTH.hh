@@ -33,6 +33,8 @@ private:
   void handle_word();
 
 public:
+  FORTH();
+
   void read( const std::string& text );
   void execute();
 };

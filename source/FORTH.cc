@@ -92,6 +92,88 @@ void FORTH::handle_word(){
   mTokens.pop();
 }
 
+FORTH::FORTH(){
+  mDictionary["."] = [this](){
+    cout << mDataStack.top();
+
+    mDataStack.pop();
+  };
+
+  mDictionary["CR"] = [](){
+    cout << endl;
+  };
+
+  mDictionary["EMIT"] = [this](){
+    cout << ( char ) mDataStack.top();
+
+    mDataStack.pop();
+  };
+
+  mDictionary["+"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs + rhs );
+  };
+
+  mDictionary["-"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs - rhs );
+  };
+
+  mDictionary["*"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs * rhs );
+  };
+
+  mDictionary["/"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs / rhs );
+  };
+
+  mDictionary[">"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs > rhs );
+  };
+
+  mDictionary["<"] = [this](){
+    auto lhs = mDataStack.top();
+    mDataStack.pop();
+
+    auto rhs = mDataStack.top();
+    mDataStack.pop();
+
+    mDataStack.push( lhs < rhs );
+  };
+
+  mDictionary["DUP"] = [this](){
+    mDataStack.push( mDataStack.top() );
+  };
+}
+
 void FORTH::read( const std::string& text ){
   stringstream ss( text );
   string word;

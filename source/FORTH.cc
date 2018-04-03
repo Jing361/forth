@@ -1,3 +1,4 @@
+#include<vector>
 #include<sstream>
 #include<iostream>
 
@@ -20,31 +21,31 @@ static TOKEN classify( const std::string& word ){
 }
 
 void FORTH::handle_definition(){
-  mTokens.pop();
+  mTokens.pop_front();
 
   auto word = mTokens.front().second;
   vector<string> tokens;
 
-  mTokens.pop();
+  mTokens.pop_front();
 
   while( mTokens.front().second != ";" ){
     tokens.emplace_back( mTokens.front().second );
 
-    mTokens.pop();
+    mTokens.pop_front();
   }
 
   mDictionary[word] =
     [this,tokens](){
-      for( auto token : tokens ){
-        mTokens.emplace( classify( token ), token );
+      for( auto it = tokens.rbegin(); it != tokens.rend(); ++it ){
+        mTokens.emplace( mTokens.cbegin(), classify( *it ), *it );
       }
     };
 
-  mTokens.pop();
+  mTokens.pop_front();
 }
 
 void FORTH::handle_declare(){
-  mTokens.pop();
+  mTokens.pop_front();
 
   mDictionary[mTokens.front().second] =
     [this](){
@@ -53,7 +54,7 @@ void FORTH::handle_declare(){
 
   mAddressCounter++;
 
-  mTokens.pop();
+  mTokens.pop_front();
 }
 
 void FORTH::handle_fetch(){
@@ -63,7 +64,7 @@ void FORTH::handle_fetch(){
 
   mDataStack.push( mMainMem[index] );
 
-  mTokens.pop();
+  mTokens.pop_front();
 }
 
 void FORTH::handle_store(){
@@ -75,7 +76,7 @@ void FORTH::handle_store(){
 
   mDataStack.pop();
 
-  mTokens.pop();
+  mTokens.pop_front();
 }
 
 void FORTH::handle_word(){
@@ -83,13 +84,13 @@ void FORTH::handle_word(){
   int value;
   stringstream ss( word );
 
+  mTokens.pop_front();
+
   if( ss >> value ){
     mDataStack.push( value );
   } else {
-    mDictionary.at( mTokens.front().second )();
+    mDictionary.at( word )();
   }
-
-  mTokens.pop();
 }
 
 FORTH::FORTH(){
@@ -179,7 +180,7 @@ void FORTH::read( const std::string& text ){
   string word;
 
   while( ss >> word ){
-    mTokens.emplace( classify( word ), word );
+    mTokens.emplace( mTokens.end(), classify( word ), word );
   }
 }
 
@@ -209,7 +210,7 @@ void FORTH::execute(){
     default:
       //! @todo exception?
       cout << "Unexpected token:\t" << mTokens.front().second << endl;
-      mTokens.pop();
+      mTokens.pop_front();
     break;
     }
   }

@@ -3,7 +3,7 @@
 
 #include<string>
 #include<stack>
-#include<queue>
+#include<deque>
 #include<utility>
 #include<functional>
 #include<map>
@@ -19,7 +19,7 @@ private:
    * together.  any merging will basically change the merged part into a pointer
    * to main memory.
    */
-  std::queue<std::pair<TOKEN, std::string> > mTokens;
+  std::deque<std::pair<TOKEN, std::string> > mTokens;
   std::stack<address_t> mDataStack;
   std::stack<address_t> mCallStack;
   std::array<data_t, 256> mMainMem;

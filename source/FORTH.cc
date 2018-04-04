@@ -96,6 +96,23 @@ void FORTH::handle_word(){
 }
 
 void FORTH::handle_branch(){
+  if( mTokens.front().second == "ELSE" ){
+    while( mTokens.front().second != "THEN" ){
+      mTokens.pop_front();
+    }
+  } else if( mTokens.front().second == "IF" ){
+    if( mDataStack.top() ){
+      mDataStack.pop();
+      mTokens.pop_front();
+    } else {
+      while( ( mTokens.front().second != "ELSE" )
+          && ( mTokens.front().second != "THEN" ) ){
+        mTokens.pop_front();
+      }
+    }
+  }
+
+  mTokens.pop_front();
 }
 
 FORTH::FORTH()
@@ -105,6 +122,21 @@ FORTH::FORTH()
         cout << mDataStack.top();
 
         mDataStack.pop();
+      }
+    },
+    {".\"",
+      [this](){
+        while( mTokens.front().second.back() != '\"' ){
+          cout << mTokens.front().second;
+
+          mTokens.pop_front();
+        }
+
+        string last = mTokens.front().second;
+
+        cout << last.substr( 0, last.size() - 1 );
+
+        mTokens.pop_front();
       }
     },
     {"CR",

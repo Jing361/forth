@@ -101,9 +101,7 @@ void FORTH::handle_branch(){
       mTokens.pop_front();
     }
   } else if( mTokens.front().second == "IF" ){
-    if( mDataStack.top() ){
-      mTokens.pop_front();
-    } else {
+    if( !mDataStack.top() ){
       while( ( mTokens.front().second != "ELSE" )
           && ( mTokens.front().second != "THEN" ) ){
         mTokens.pop_front();

@@ -10,6 +10,7 @@ enum class TOKEN{
   NUMBER,
   DECLARE,
   BRANCH,
+  LOOP,
   E_OF_F,
 };
 

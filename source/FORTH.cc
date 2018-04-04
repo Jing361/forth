@@ -17,46 +17,86 @@ static TOKEN classify( const std::string& word ){
     return TOKEN::DECLARE;
   } else if( word == "IF" || word == "ELSE" || word == "THEN" ){
     return TOKEN::BRANCH;
+  } else if( word == "DO" || word == "LOOP" ){
+    return TOKEN::LOOP;
   } else {
     return TOKEN::WORD;
   }
 }
 
 void FORTH::handle_definition(){
-  mTokens.pop_front();
+  ++mTokenIter;
 
-  auto word = mTokens.front().second;
+  auto word = mTokenIter->second;
   vector<string> tokens;
 
-  mTokens.pop_front();
+  ++mTokenIter;
 
-  while( mTokens.front().second != ";" ){
-    tokens.emplace_back( mTokens.front().second );
+  while( mTokenIter->second != ";" ){
+    tokens.emplace_back( mTokenIter->second );
 
-    mTokens.pop_front();
+    ++mTokenIter;
   }
 
+  /* If the program looks like this:
+   *
+   * 1
+   * X
+   * 4<mTokenIter
+   *
+   * Where X is a word defined as : X 2 3 ;
+   * then the process to execute X looks like this:
+   * 1
+   * X<nextIter
+   * 4<mTokenIter
+   *
+   * 1
+   * X<nextIter
+   * 2
+   * 3
+   * 4<mTokenIter
+   *
+   * 1
+   * X<nextIter
+   * 2<mTokenIter
+   * 3
+   * 4
+   *
+   * 1
+   * 2<mTokenIter
+   * 3
+   * 4
+   *
+   */
   mDictionary[word] =
     [this,tokens](){
+      auto nextIter = mTokenIter;
+      --nextIter;
+
       for( auto it = tokens.rbegin(); it != tokens.rend(); ++it ){
-        mTokens.emplace( mTokens.cbegin(), classify( *it ), *it );
+        mTokens.emplace( mTokenIter, classify( *it ), *it );
       }
+
+      mTokenIter = nextIter;
+      ++mTokenIter;
+
+      mTokens.erase( nextIter );
     };
 
-  mTokens.pop_front();
+  ++mTokenIter;
 }
 
 void FORTH::handle_declare(){
-  mTokens.pop_front();
+  ++mTokenIter;
 
-  mDictionary[mTokens.front().second] =
+  mDictionary[mTokenIter->second] =
     [this](){
       mDataStack.push( mAddressCounter );
     };
 
   mAddressCounter++;
 
-  mTokens.pop_front();
+  ++mTokenIter;
 }
 
 void FORTH::handle_fetch(){
@@ -66,7 +106,7 @@ void FORTH::handle_fetch(){
 
   mDataStack.push( mMainMem[index] );
 
-  mTokens.pop_front();
+  ++mTokenIter;
 }
 
 void FORTH::handle_store(){
@@ -78,15 +118,15 @@ void FORTH::handle_store(){
 
   mDataStack.pop();
 
-  mTokens.pop_front();
+  ++mTokenIter;
 }
 
 void FORTH::handle_word(){
-  auto word = mTokens.front().second;
+  auto word = mTokenIter->second;
   int value;
   stringstream ss( word );
 
-  mTokens.pop_front();
+  ++mTokenIter;
 
   if( ss >> value ){
     mDataStack.push( value );
@@ -96,22 +136,25 @@ void FORTH::handle_word(){
 }
 
 void FORTH::handle_branch(){
-  if( mTokens.front().second == "ELSE" ){
-    while( mTokens.front().second != "THEN" ){
-      mTokens.pop_front();
+  if( mTokenIter->second == "ELSE" ){
+    while( mTokenIter->second != "THEN" ){
+      ++mTokenIter;
     }
-  } else if( mTokens.front().second == "IF" ){
+  } else if( mTokenIter->second == "IF" ){
     if( !mDataStack.top() ){
-      while( ( mTokens.front().second != "ELSE" )
-          && ( mTokens.front().second != "THEN" ) ){
-        mTokens.pop_front();
+      while( ( mTokenIter->second != "ELSE" )
+          && ( mTokenIter->second != "THEN" ) ){
+        ++mTokenIter;
       }
     }
 
     mDataStack.pop();
   }
 
-  mTokens.pop_front();
+  ++mTokenIter;
+}
+
+void FORTH::handle_loop(){
 }
 
 FORTH::FORTH()
@@ -125,17 +168,17 @@ FORTH::FORTH()
     },
     {".\"",
       [this](){
-        while( mTokens.front().second.back() != '\"' ){
-          cout << mTokens.front().second;
+        while( mTokenIter->second.back() != '\"' ){
+          cout << mTokenIter->second;
 
-          mTokens.pop_front();
+          ++mTokenIter;
         }
 
-        string last = mTokens.front().second;
+        string last = mTokenIter->second;
 
         cout << last.substr( 0, last.size() - 1 );
 
-        mTokens.pop_front();
+        ++mTokenIter;
       }
     },
     {"CR",
@@ -281,15 +324,24 @@ FORTH::FORTH()
 void FORTH::read( const std::string& text ){
   stringstream ss( text );
   string word;
+  decltype( mTokens ) newTokens;
 
   while( ss >> word ){
-    mTokens.emplace( mTokens.end(), classify( word ), word );
+    newTokens.emplace_back( classify( word ), word );
+  }
+
+  if( mTokenIter == mTokens.end() ){
+    --mTokenIter;
+
+    mTokens.insert( mTokens.end(), newTokens.begin(), newTokens.end() );
+
+    ++mTokenIter;
   }
 }
 
 void FORTH::execute(){
-  while( !mTokens.empty() ){
-    switch( mTokens.front().first ){
+  while( mTokenIter != mTokens.end() ){
+    switch( mTokenIter->first ){
     case TOKEN::DEFINE:// word
       handle_definition();
     break;
@@ -314,10 +366,14 @@ void FORTH::execute(){
       handle_branch();
     break;
 
+    case TOKEN::LOOP:
+      handle_loop();
+    break;
+
     default:
       //! @todo exception?
-      cout << "Unexpected token:\t" << mTokens.front().second << endl;
-      mTokens.pop_front();
+      cout << "Unexpected token:\t" << mTokenIter->second << endl;
+      ++mTokenIter;
     break;
     }
   }

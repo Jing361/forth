@@ -3,7 +3,7 @@
 
 #include<string>
 #include<stack>
-#include<deque>
+#include<list>
 #include<utility>
 #include<functional>
 #include<map>
@@ -22,12 +22,14 @@ private:
    * together.  any merging will basically change the merged part into a pointer
    * to main memory.
    */
-  std::deque<std::pair<TOKEN, std::string> > mTokens;
+  /* a list is used because modification only affects iterators to removed elements */
+  std::list<std::pair<TOKEN, std::string> > mTokens;
   std::stack<data_t> mDataStack;
   std::stack<data_t> mCallStack;
   std::array<data_t, 256> mMainMem;
   std::map<std::string, std::function<void()> > mDictionary;
   int mAddressCounter = 0;
+  decltype( mTokens )::iterator mTokenIter = mTokens.begin();
 
   void handle_definition();
   void handle_declare();
@@ -35,6 +37,7 @@ private:
   void handle_store();
   void handle_word();
   void handle_branch();
+  void handle_loop();
 
 public:
   FORTH();

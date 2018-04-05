@@ -172,6 +172,7 @@ void FORTH::handle_loop(){
     } else {
       // we're done, pop off limit
       mCallStack.pop();
+      ++mTokenIter;
     }
   } else if( mTokenIter->second == "DO" ){
     auto lcv = mDataStack.top();
@@ -181,6 +182,8 @@ void FORTH::handle_loop(){
 
     mCallStack.push( limit );
     mCallStack.push( lcv );
+
+    ++mTokenIter;
   }
 }
 

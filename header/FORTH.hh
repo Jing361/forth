@@ -3,7 +3,7 @@
 
 #include<string>
 #include<stack>
-#include<list>
+#include<vector>
 #include<utility>
 #include<functional>
 #include<map>
@@ -22,14 +22,13 @@ private:
    * together.  any merging will basically change the merged part into a pointer
    * to main memory.
    */
-  /* a list is used because modification only affects iterators to removed elements */
-  std::list<std::pair<TOKEN, std::string> > mTokens;
+  std::vector<std::pair<TOKEN, std::string> > mTokens;
   std::stack<data_t> mDataStack;
   std::stack<data_t> mCallStack;
   std::array<data_t, 256> mMainMem;
   std::map<std::string, std::function<void()> > mDictionary;
   int mAddressCounter = 0;
-  decltype( mTokens )::iterator mTokenIter = mTokens.begin();
+  size_t mTokenIndex = 0;
 
   void handle_definition();
   void handle_declare();

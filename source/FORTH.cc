@@ -25,78 +25,84 @@ static TOKEN classify( const std::string& word ){
 }
 
 void FORTH::handle_definition(){
-  ++mTokenIter;
+  ++mTokenIndex;
 
-  auto word = mTokenIter->second;
+  auto word = mTokens[mTokenIndex].second;
   vector<string> tokens;
 
-  ++mTokenIter;
+  ++mTokenIndex;
 
-  while( mTokenIter->second != ";" ){
-    tokens.emplace_back( mTokenIter->second );
+  while( mTokens[mTokenIndex].second != ";" ){
+    tokens.emplace_back( mTokens[mTokenIndex].second );
 
-    ++mTokenIter;
+    ++mTokenIndex;
   }
 
   /* If the program looks like this:
    *
    * 1
    * X
-   * 4<mTokenIter
+   * 4<mTokenIndex
    *
    * Where X is a word defined as : X 2 3 ;
    * then the process to execute X looks like this:
    * 1
-   * X<nextIter
-   * 4<mTokenIter
+   * X<mTokenIndex
+   * 4<insertIndex
    *
    * 1
-   * X<nextIter
+   * X<mTokenIndex
+   * 2<insertIndex
+   * 4
+   *
+   * 1
+   * X<mTokenIndex
+   * 2
+   * 4<insertIndex
+   *
+   * 1
+   * X<mTokenIndex
+   * 2
+   * 3<insertIndex
+   * 4
+   *
+   * 1
+   * X<mTokenIndex
    * 2
    * 3
-   * 4<mTokenIter
-   *
-   * 1
-   * X<nextIter
-   * 2<mTokenIter
-   * 3
    * 4
    *
    * 1
-   * 2<mTokenIter
+   * 2<mTokenIndex
    * 3
    * 4
-   *
    */
   mDictionary[word] =
     [this,tokens](){
-      auto nextIter = mTokenIter;
-      --nextIter;
+      auto insertIndex = mTokenIndex--;
 
       for( auto it = tokens.begin(); it != tokens.end(); ++it ){
-        mTokens.emplace( mTokenIter, classify( *it ), *it );
+        mTokens.emplace( ( mTokens.begin() + insertIndex ), classify( *it ), *it );
+        ++insertIndex;
       }
 
-      mTokenIter = nextIter;
-      ++mTokenIter;
-
-      mTokens.erase( nextIter );
+      mTokens.erase( mTokens.begin() + mTokenIndex );
     };
 
-  ++mTokenIter;
+  ++mTokenIndex;
 }
 
 void FORTH::handle_declare(){
-  ++mTokenIter;
+  ++mTokenIndex;
 
-  mDictionary[mTokenIter->second] =
+  mDictionary[mTokens[mTokenIndex].second] =
     [this](){
       mDataStack.push( mAddressCounter );
     };
 
   mAddressCounter++;
 
-  ++mTokenIter;
+  ++mTokenIndex;
 }
 
 void FORTH::handle_fetch(){
@@ -106,7 +112,7 @@ void FORTH::handle_fetch(){
 
   mDataStack.push( mMainMem[index] );
 
-  ++mTokenIter;
+  ++mTokenIndex;
 }
 
 void FORTH::handle_store(){
@@ -118,15 +124,15 @@ void FORTH::handle_store(){
 
   mDataStack.pop();
 
-  ++mTokenIter;
+  ++mTokenIndex;
 }
 
 void FORTH::handle_word(){
-  auto word = mTokenIter->second;
+  auto word = mTokens[mTokenIndex].second;
   int value;
   stringstream ss( word );
 
-  ++mTokenIter;
+  ++mTokenIndex;
 
   if( ss >> value ){
     mDataStack.push( value );
@@ -136,45 +142,45 @@ void FORTH::handle_word(){
 }
 
 void FORTH::handle_branch(){
-  if( mTokenIter->second == "ELSE" ){
-    while( mTokenIter->second != "THEN" ){
-      ++mTokenIter;
+  if( mTokens[mTokenIndex].second == "ELSE" ){
+    while( mTokens[mTokenIndex].second != "THEN" ){
+      ++mTokenIndex;
     }
-  } else if( mTokenIter->second == "IF" ){
+  } else if( mTokens[mTokenIndex].second == "IF" ){
     if( !mDataStack.top() ){
-      while( ( mTokenIter->second != "ELSE" )
-          && ( mTokenIter->second != "THEN" ) ){
-        ++mTokenIter;
+      while( ( mTokens[mTokenIndex].second != "ELSE" )
+          && ( mTokens[mTokenIndex].second != "THEN" ) ){
+        ++mTokenIndex;
       }
     }
 
     mDataStack.pop();
   }
 
-  ++mTokenIter;
+  ++mTokenIndex;
 }
 
 void FORTH::handle_loop(){
   // call stack is used for loop control variables
   // this would look nicer if we could just store the iterator at do
-  if( mTokenIter->second == "LOOP" ){
+  if( mTokens[mTokenIndex].second == "LOOP" ){
     auto lcv = mCallStack.top();
     mCallStack.pop();
     auto limit = mCallStack.top();
     ++lcv;
 
     if( lcv < limit ){
-      while( ( --mTokenIter )->second != "DO" ){
+      while( mTokens[--mTokenIndex].second != "DO" ){
       }
 
-      ++mTokenIter;
+      ++mTokenIndex;
       mCallStack.push( lcv );
     } else {
       // we're done, pop off limit
       mCallStack.pop();
-      ++mTokenIter;
+      ++mTokenIndex;
     }
-  } else if( mTokenIter->second == "DO" ){
+  } else if( mTokens[mTokenIndex].second == "DO" ){
     auto lcv = mDataStack.top();
     mDataStack.pop();
     auto limit = mDataStack.top();
@@ -183,7 +189,7 @@ void FORTH::handle_loop(){
     mCallStack.push( limit );
     mCallStack.push( lcv );
 
-    ++mTokenIter;
+    ++mTokenIndex;
   }
 }
 
@@ -198,17 +204,17 @@ FORTH::FORTH()
     },
     {".\"",
       [this](){
-        while( mTokenIter->second.back() != '\"' ){
-          cout << mTokenIter->second;
+        while( mTokens[mTokenIndex].second.back() != '\"' ){
+          cout << mTokens[mTokenIndex].second;
 
-          ++mTokenIter;
+          ++mTokenIndex;
         }
 
-        string last = mTokenIter->second;
+        string last = mTokens[mTokenIndex].second;
 
         cout << last.substr( 0, last.size() - 1 );
 
-        ++mTokenIter;
+        ++mTokenIndex;
       }
     },
     {"CR",
@@ -365,18 +371,18 @@ void FORTH::read( const std::string& text ){
     newTokens.emplace_back( classify( word ), word );
   }
 
-  if( mTokenIter == mTokens.end() ){
-    --mTokenIter;
+  if( mTokenIndex == mTokens.size() ){
+    --mTokenIndex;
 
     mTokens.insert( mTokens.end(), newTokens.begin(), newTokens.end() );
 
-    ++mTokenIter;
+    ++mTokenIndex;
   }
 }
 
 void FORTH::execute(){
-  while( mTokenIter != mTokens.end() ){
-    switch( mTokenIter->first ){
+  while( mTokenIndex != mTokens.size() ){
+    switch( mTokens[mTokenIndex].first ){
     case TOKEN::DEFINE:// word
       handle_definition();
     break;
@@ -407,8 +413,8 @@ void FORTH::execute(){
 
     default:
       //! @todo exception?
-      cout << "Unexpected token:\t" << mTokenIter->second << endl;
-      ++mTokenIter;
+      cout << "Unexpected token:\t" << mTokens[mTokenIndex].second << endl;
+      ++mTokenIndex;
     break;
     }
   }

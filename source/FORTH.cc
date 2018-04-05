@@ -167,16 +167,16 @@ void FORTH::handle_loop(){
     auto lcv = mCallStack.top();
     mCallStack.pop();
     auto limit = mCallStack.top();
-    ++lcv;
+    mCallStack.pop();
 
-    if( lcv < limit ){
-      while( mTokens[--mTokenIndex].second != "DO" ){
-      }
+    if( ++lcv < limit ){
+      // go back to DO marker
+      mTokenIndex = mCallStack.top() + 1;
 
-      ++mTokenIndex;
+      mCallStack.push( limit );
       mCallStack.push( lcv );
     } else {
-      // we're done, pop off limit
+      // we're done, pop off DO index
       mCallStack.pop();
       ++mTokenIndex;
     }
@@ -186,6 +186,7 @@ void FORTH::handle_loop(){
     auto limit = mDataStack.top();
     mDataStack.pop();
 
+    mCallStack.push( mTokenIndex );
     mCallStack.push( limit );
     mCallStack.push( lcv );
 
@@ -224,7 +225,7 @@ FORTH::FORTH()
     },
     {"I",
       [this](){
-        cout << mCallStack.top();
+        mDataStack.push( mCallStack.top() );
       }
     },
     {"EMIT",

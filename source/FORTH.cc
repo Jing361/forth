@@ -73,7 +73,7 @@ void FORTH::handle_definition(){
       auto nextIter = mTokenIter;
       --nextIter;
 
-      for( auto it = tokens.rbegin(); it != tokens.rend(); ++it ){
+      for( auto it = tokens.begin(); it != tokens.end(); ++it ){
         mTokens.emplace( mTokenIter, classify( *it ), *it );
       }
 
@@ -155,6 +155,33 @@ void FORTH::handle_branch(){
 }
 
 void FORTH::handle_loop(){
+  // call stack is used for loop control variables
+  // this would look nicer if we could just store the iterator at do
+  if( mTokenIter->second == "LOOP" ){
+    auto lcv = mCallStack.top();
+    mCallStack.pop();
+    auto limit = mCallStack.top();
+    ++lcv;
+
+    if( lcv < limit ){
+      while( ( --mTokenIter )->second != "DO" ){
+      }
+
+      ++mTokenIter;
+      mCallStack.push( lcv );
+    } else {
+      // we're done, pop off limit
+      mCallStack.pop();
+    }
+  } else if( mTokenIter->second == "DO" ){
+    auto lcv = mDataStack.top();
+    mDataStack.pop();
+    auto limit = mDataStack.top();
+    mDataStack.pop();
+
+    mCallStack.push( limit );
+    mCallStack.push( lcv );
+  }
 }
 
 FORTH::FORTH()
@@ -184,6 +211,11 @@ FORTH::FORTH()
     {"CR",
       [](){
         cout << endl;
+      }
+    },
+    {"I",
+      [this](){
+        cout << mCallStack.top();
       }
     },
     {"EMIT",

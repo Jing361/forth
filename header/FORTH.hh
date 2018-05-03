@@ -22,6 +22,11 @@ private:
    * together.  any merging will basically change the merged part into a pointer
    * to main memory.
    */
+  /*! @todo mTokens should be translated to be in a regular memory space
+   *  as array<data_t, 512> mProgMem.  This is more representative of real
+   *  forth hardware, where instructions are encoded as numbers etc. This also
+   *  requires overhaul of parsing system.
+   */
   std::vector<std::pair<TOKEN, std::string> > mTokens;
   std::stack<data_t> mDataStack;
   std::stack<data_t> mCallStack;

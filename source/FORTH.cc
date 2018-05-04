@@ -372,9 +372,10 @@ void FORTH::read( const std::string& text ){
     newTokens.emplace_back( classify( word ), word );
   }
 
+  map<string, vector<data_t> > fnDefs;
   map<string, address_t> fnAddresses;
   map<string, address_t> varAddresses;
-  address_t fn_address_cntr = 0;
+  address_t prog_address_cntr = 0;
   address_t var_address_cntr = 0;
 
   //! @todo create a 'microcode' instruction set
@@ -396,12 +397,27 @@ void FORTH::read( const std::string& text ){
   //  return
   //  load value
   //  store value
+  //  push
+  //  pop
   //
   //  These instructions will enable most necessary functionality.
   for( auto tok : newTokens ){
     if( tok.first == TOKEN::DECLARE ){
       varAddresses[tok.second] = var_address_cntr++;
     } else if( tok.first == TOKEN::DEFINE ){
+      vector<data_t> def;
+
+      //read word definition into def
+
+      fnDefs[tok.second] = def;
+    } else if( tok.first == TOKEN::FETCH ){
+      mProgMem[prog_address_cntr++] = u_LOAD;
+    } else if( tok.first == TOKEN::STORE ){
+      mProgMem[prog_address_cntr++] = u_STORE;
+    } else if( tok.first == TOKEN::WORD ){
+      // check if variable, if yes put number on stack
+      // if no, check if fnc, if yes call func
+      // if no, error?
     }
   }
 }

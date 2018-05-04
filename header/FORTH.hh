@@ -31,6 +31,7 @@ private:
   std::stack<data_t> mDataStack;
   std::stack<data_t> mCallStack;
   std::array<data_t, 256> mMainMem;
+  std::array<data_t, 256> mProgMem;
   std::map<std::string, std::function<void()> > mDictionary;
   int mAddressCounter = 0;
   size_t mTokenIndex = 0;

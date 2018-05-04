@@ -372,12 +372,37 @@ void FORTH::read( const std::string& text ){
     newTokens.emplace_back( classify( word ), word );
   }
 
-  if( mTokenIndex == mTokens.size() ){
-    --mTokenIndex;
+  map<string, address_t> fnAddresses;
+  map<string, address_t> varAddresses;
+  address_t fn_address_cntr = 0;
+  address_t var_address_cntr = 0;
 
-    mTokens.insert( mTokens.end(), newTokens.begin(), newTokens.end() );
-
-    ++mTokenIndex;
+  //! @todo create a 'microcode' instruction set
+  //    to translate these tokens into for the 'real' forth machine to execute
+  //  The new system will take forth program instructions, and compile them into
+  //   virtual machine instructions.  These instructions will be what's actually
+  //   executed.  This architecture allows function calls to work in a more
+  //   realistic/real-world way.  currently the system replace a fn call with
+  //   that functions contents, the new method will compile the function, and
+  //   place it in main memory somewhere to be called later.  The new machine
+  //   instructions etc are necessary because terms like 'return' or any kind
+  //   of function return does not exist in the forth lexicon, but can exist
+  //   in the micro code.
+  //  'First pass' instinctive expectiations of the contents of this micro code
+  //   includes:
+  //  goto
+  //  conditional goto
+  //  call
+  //  return
+  //  load value
+  //  store value
+  //
+  //  These instructions will enable most necessary functionality.
+  for( auto tok : newTokens ){
+    if( tok.first == TOKEN::DECLARE ){
+      varAddresses[tok.second] = var_address_cntr++;
+    } else if( tok.first == TOKEN::DEFINE ){
+    }
   }
 }
 

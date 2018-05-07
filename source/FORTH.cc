@@ -6,7 +6,8 @@
 
 using namespace std;
 
-static TOKEN classify( const std::string& word ){
+static TOKEN
+classify( const std::string& word ){
   if( word == ":" || word == ";" ){
     return TOKEN::DEFINE;
   } else if( word == "@" ){
@@ -24,7 +25,8 @@ static TOKEN classify( const std::string& word ){
   }
 }
 
-void FORTH::handle_definition(){
+void
+FORTH::handle_definition(){
   ++mTokenIndex;
 
   auto word = mTokens[mTokenIndex].second;
@@ -92,7 +94,8 @@ void FORTH::handle_definition(){
   ++mTokenIndex;
 }
 
-void FORTH::handle_declare(){
+void
+FORTH::handle_declare(){
   ++mTokenIndex;
 
   mDictionary[mTokens[mTokenIndex].second] =
@@ -105,7 +108,8 @@ void FORTH::handle_declare(){
   ++mTokenIndex;
 }
 
-void FORTH::handle_fetch(){
+void
+FORTH::handle_fetch(){
   auto index = mDataStack.top();
 
   mDataStack.pop();
@@ -115,7 +119,8 @@ void FORTH::handle_fetch(){
   ++mTokenIndex;
 }
 
-void FORTH::handle_store(){
+void
+FORTH::handle_store(){
   auto index = mDataStack.top();
 
   mDataStack.pop();
@@ -127,7 +132,8 @@ void FORTH::handle_store(){
   ++mTokenIndex;
 }
 
-void FORTH::handle_word(){
+void
+FORTH::handle_word(){
   auto word = mTokens[mTokenIndex].second;
   int value;
   stringstream ss( word );
@@ -141,7 +147,8 @@ void FORTH::handle_word(){
   }
 }
 
-void FORTH::handle_branch(){
+void
+FORTH::handle_branch(){
   if( mTokens[mTokenIndex].second == "ELSE" ){
     while( mTokens[mTokenIndex].second != "THEN" ){
       ++mTokenIndex;
@@ -160,7 +167,8 @@ void FORTH::handle_branch(){
   ++mTokenIndex;
 }
 
-void FORTH::handle_loop(){
+void
+FORTH::handle_loop(){
   // call stack is used for loop control variables
   // this would look nicer if we could just store the iterator at do
   if( mTokens[mTokenIndex].second == "LOOP" ){
@@ -363,7 +371,8 @@ FORTH::FORTH()
   }){
 }
 
-void FORTH::read( const std::string& text ){
+void
+FORTH::read( const std::string& text ){
   stringstream ss( text );
   string word;
   decltype( mTokens ) newTokens;
@@ -372,7 +381,7 @@ void FORTH::read( const std::string& text ){
     newTokens.emplace_back( classify( word ), word );
   }
 
-  map<string, vector<data_t> > fnDefs;
+  vector<data_t> main_prog;
   map<string, address_t> fnAddresses;
   map<string, address_t> varAddresses;
   address_t prog_address_cntr = 0;
@@ -388,9 +397,9 @@ void FORTH::read( const std::string& text ){
   //   place it in main memory somewhere to be called later.  The new machine
   //   instructions etc are necessary because terms like 'return' or any kind
   //   of function return does not exist in the forth lexicon, but can exist
-  //   in the micro code.
-  //  'First pass' instinctive expectiations of the contents of this micro code
-  //   includes:
+  //   in the micro code. The idea of 'return' is necessary to exist when using
+  //   a regular call stack.
+  //  'First pass' expectiations of the contents of this micro code includes:
   //  goto
   //  conditional goto
   //  call
@@ -399,30 +408,69 @@ void FORTH::read( const std::string& text ){
   //  store value
   //  push
   //  pop
+  //  math
   //
   //  These instructions will enable most necessary functionality.
-  for( auto tok : newTokens ){
-    if( tok.first == TOKEN::DECLARE ){
+  auto translate =
+  [&]( pair<TOKEN, string> tok )->data_t{
+    switch( tok.first ){
+    case TOKEN::FETCH:
+      return u_LOAD;
+    break;
+
+    case TOKEN::STORE:
+      return u_STORE;
+    break;
+
+    case TOKEN::WORD:
+      if( varAddresses.count( tok.second ) > 0 ){
+        return u_PUSH | ( varAddresses[tok.second] << 8 );
+      } else if( fnAddresses.count( tok.second ) ){
+        return u_CALL | ( fnAddresses[tok.second] << 8 );
+      } else {
+        throw runtime_error( string( "Unrecognized word '" ) + tok.second + "'" );
+      }
+    break;
+
+    default:
+      throw runtime_error( string( "invalid word during definition" ) + tok.second );
+    break;
+    }
+  };
+
+  for( auto iter = newTokens.begin(); iter != newTokens.end(); ++iter ){
+    auto tok = *iter;
+
+    switch( tok.first ){
+    case TOKEN::DECLARE:
       varAddresses[tok.second] = var_address_cntr++;
-    } else if( tok.first == TOKEN::DEFINE ){
-      vector<data_t> def;
+    break;
 
-      //read word definition into def
+    case TOKEN::DEFINE:
+      tok = *(++iter);
 
-      fnDefs[tok.second] = def;
-    } else if( tok.first == TOKEN::FETCH ){
-      mProgMem[prog_address_cntr++] = u_LOAD;
-    } else if( tok.first == TOKEN::STORE ){
-      mProgMem[prog_address_cntr++] = u_STORE;
-    } else if( tok.first == TOKEN::WORD ){
-      // check if variable, if yes put number on stack
-      // if no, check if fnc, if yes call func
-      // if no, error?
+      fnAddresses[tok.second] = prog_address_cntr;
+
+      while( tok.first != TOKEN::DEFINE || tok.second != ";" ){
+        mProgMem[prog_address_cntr++] = translate( *(++iter) );
+      }
+    break;
+
+    case TOKEN::FETCH:
+    case TOKEN::STORE:
+    case TOKEN::WORD:
+        mProgMem[prog_address_cntr++] = translate( tok );
+    break;
+
+    default:
+      throw runtime_error( string( "Invalid token" ) + tok.second );
+    break;
     }
   }
 }
 
-void FORTH::execute(){
+void
+FORTH::execute(){
   while( mTokenIndex != mTokens.size() ){
     switch( mTokens[mTokenIndex].first ){
     case TOKEN::DEFINE:// word

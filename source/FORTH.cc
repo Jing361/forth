@@ -448,7 +448,7 @@ FORTH::read( const std::string& text ){
     break;
 
     default:
-      throw runtime_error( string( "invalid word during definition" ) + tok.second );
+      throw runtime_error( string( "invalid word during definition " ) + tok.second );
     break;
     }
   };
@@ -462,12 +462,12 @@ FORTH::read( const std::string& text ){
     break;
 
     case TOKEN::DEFINE:
-      tok = *(++iter);
+      ++iter;
+      fnAddresses[iter->second] = prog_address_cntr;
 
-      fnAddresses[tok.second] = prog_address_cntr;
-
-      while( tok.first != TOKEN::DEFINE || tok.second != ";" ){
-        mProgMem[prog_address_cntr++] = translate( *(++iter) );
+      ++iter;
+      while( iter->first != TOKEN::DEFINE || iter->second != ";" ){
+        mProgMem[prog_address_cntr++] = translate( *iter );
       }
     break;
 

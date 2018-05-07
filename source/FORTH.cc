@@ -402,6 +402,14 @@ FORTH::FORTH()
 //    saved at the end of the program memory space.  The main program isn't
 //    being written first because fn-word addresses are not yet known.  Doing it
 //    this way is easier in that respect, but a better solution should be found.
+//  A potential solution to the above problem involves using an intermediate
+//    language and doing a second pass to translate this into actual code, this
+//    allows all function sizes to be known before writing to main memory.
+//  Another solution is to do the above but in place, and not utilizing an
+//    intermediate.  Instead calls to a function will be replaced with call 0,
+//    call 1, call 2 etc, where each function is assigned a number; after
+//    primary parsing is complete a second pass will be run to replace each
+//    call with the correct address.
 void
 FORTH::read( const std::string& text ){
   stringstream ss( text );

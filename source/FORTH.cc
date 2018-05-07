@@ -371,6 +371,37 @@ FORTH::FORTH()
   }){
 }
 
+//! @todo create a 'microcode' instruction set
+//    to translate these tokens into for the 'real' forth machine to execute
+//  The new system will take forth program instructions, and compile them into
+//   virtual machine instructions.  These instructions will be what's actually
+//   executed.  This architecture allows function calls to work in a more
+//   realistic/real-world way.  currently the system replace a fn call with
+//   that functions contents, the new method will compile the function, and
+//   place it in main memory somewhere to be called later.  The new machine
+//   instructions etc are necessary because terms like 'return' or any kind
+//   of function return does not exist in the forth lexicon, but can exist
+//   in the micro code. The idea of 'return' is necessary to exist when using
+//   a regular call stack.
+//  'First pass' expectiations of the contents of this micro code includes:
+//  goto
+//  conditional goto
+//  call
+//  return
+//  load value
+//  store value
+//  push
+//  pop
+//  math
+//
+//  These instructions will enable most necessary functionality.
+//
+//  To implement this, functions are written to main memory, and the main
+//    program is saved, then appended after parsing is complete.  This
+//    ambiguates the starting point.  To remedy this, the starting point can be
+//    saved at the end of the program memory space.  The main program isn't
+//    being written first because fn-word addresses are not yet known.  Doing it
+//    this way is easier in that respect, but a better solution should be found.
 void
 FORTH::read( const std::string& text ){
   stringstream ss( text );
@@ -387,30 +418,6 @@ FORTH::read( const std::string& text ){
   address_t prog_address_cntr = 0;
   address_t var_address_cntr = 0;
 
-  //! @todo create a 'microcode' instruction set
-  //    to translate these tokens into for the 'real' forth machine to execute
-  //  The new system will take forth program instructions, and compile them into
-  //   virtual machine instructions.  These instructions will be what's actually
-  //   executed.  This architecture allows function calls to work in a more
-  //   realistic/real-world way.  currently the system replace a fn call with
-  //   that functions contents, the new method will compile the function, and
-  //   place it in main memory somewhere to be called later.  The new machine
-  //   instructions etc are necessary because terms like 'return' or any kind
-  //   of function return does not exist in the forth lexicon, but can exist
-  //   in the micro code. The idea of 'return' is necessary to exist when using
-  //   a regular call stack.
-  //  'First pass' expectiations of the contents of this micro code includes:
-  //  goto
-  //  conditional goto
-  //  call
-  //  return
-  //  load value
-  //  store value
-  //  push
-  //  pop
-  //  math
-  //
-  //  These instructions will enable most necessary functionality.
   auto translate =
   [&]( pair<TOKEN, string> tok )->data_t{
     switch( tok.first ){
@@ -459,13 +466,17 @@ FORTH::read( const std::string& text ){
     case TOKEN::FETCH:
     case TOKEN::STORE:
     case TOKEN::WORD:
-        mProgMem[prog_address_cntr++] = translate( tok );
+        main_prog.push_back( translate( tok ) );
     break;
 
     default:
       throw runtime_error( string( "Invalid token" ) + tok.second );
     break;
     }
+  }
+
+  for( auto word : main_prog ){
+    mProgMem[prog_address_cntr++] = word;
   }
 }
 

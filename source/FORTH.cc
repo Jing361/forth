@@ -8,6 +8,9 @@ using namespace std;
 
 static TOKEN
 classify( const std::string& word ){
+  stringstream ss( word );
+  data_t num;
+
   if( word == ":" || word == ";" ){
     return TOKEN::DEFINE;
   } else if( word == "@" ){
@@ -20,355 +23,89 @@ classify( const std::string& word ){
     return TOKEN::BRANCH;
   } else if( word == "DO" || word == "LOOP" ){
     return TOKEN::LOOP;
+  } else if( ss >> num ){
+    return TOKEN::NUMBER;
   } else {
     return TOKEN::WORD;
   }
 }
 
-void
-FORTH::handle_definition(){
-  ++mTokenIndex;
-
-  auto word = mTokens[mTokenIndex].second;
-  vector<string> tokens;
-
-  ++mTokenIndex;
-
-  while( mTokens[mTokenIndex].second != ";" ){
-    tokens.emplace_back( mTokens[mTokenIndex].second );
-
-    ++mTokenIndex;
-  }
-
-  /* If the program looks like this:
-   *
-   * 1
-   * X
-   * 4<mTokenIndex
-   *
-   * Where X is a word defined as : X 2 3 ;
-   * then the process to execute X looks like this:
-   * 1
-   * X<mTokenIndex
-   * 4<insertIndex
-   *
-   * 1
-   * X<mTokenIndex
-   * 2<insertIndex
-   * 4
-   *
-   * 1
-   * X<mTokenIndex
-   * 2
-   * 4<insertIndex
-   *
-   * 1
-   * X<mTokenIndex
-   * 2
-   * 3<insertIndex
-   * 4
-   *
-   * 1
-   * X<mTokenIndex
-   * 2
-   * 3
-   * 4
-   *
-   * 1
-   * 2<mTokenIndex
-   * 3
-   * 4
-   */
-  mDictionary[word] =
-    [this,tokens](){
-      auto insertIndex = mTokenIndex--;
-
-      for( auto it = tokens.begin(); it != tokens.end(); ++it ){
-        mTokens.emplace( ( mTokens.begin() + insertIndex ), classify( *it ), *it );
-        ++insertIndex;
-      }
-
-      mTokens.erase( mTokens.begin() + mTokenIndex );
-    };
-
-  ++mTokenIndex;
-}
-
-void
-FORTH::handle_declare(){
-  ++mTokenIndex;
-
-  mDictionary[mTokens[mTokenIndex].second] =
-    [this](){
-      mDataStack.push( mAddressCounter );
-    };
-
-  mAddressCounter++;
-
-  ++mTokenIndex;
-}
-
-void
-FORTH::handle_fetch(){
-  auto index = mDataStack.top();
-
-  mDataStack.pop();
-
-  mDataStack.push( mMainMem[index] );
-
-  ++mTokenIndex;
-}
-
-void
-FORTH::handle_store(){
-  auto index = mDataStack.top();
-
-  mDataStack.pop();
-
-  mMainMem[index] = mDataStack.top();
-
-  mDataStack.pop();
-
-  ++mTokenIndex;
-}
-
-void
-FORTH::handle_word(){
-  auto word = mTokens[mTokenIndex].second;
-  int value;
-  stringstream ss( word );
-
-  ++mTokenIndex;
-
-  if( ss >> value ){
-    mDataStack.push( value );
-  } else {
-    mDictionary.at( word )();
-  }
-}
-
-void
-FORTH::handle_branch(){
-  if( mTokens[mTokenIndex].second == "ELSE" ){
-    while( mTokens[mTokenIndex].second != "THEN" ){
-      ++mTokenIndex;
-    }
-  } else if( mTokens[mTokenIndex].second == "IF" ){
-    if( !mDataStack.top() ){
-      while( ( mTokens[mTokenIndex].second != "ELSE" )
-          && ( mTokens[mTokenIndex].second != "THEN" ) ){
-        ++mTokenIndex;
-      }
-    }
-
-    mDataStack.pop();
-  }
-
-  ++mTokenIndex;
-}
-
-void
-FORTH::handle_loop(){
-  // call stack is used for loop control variables
-  // this would look nicer if we could just store the iterator at do
-  if( mTokens[mTokenIndex].second == "LOOP" ){
-    auto lcv = mCallStack.top();
-    mCallStack.pop();
-    auto limit = mCallStack.top();
-    mCallStack.pop();
-
-    if( ++lcv < limit ){
-      // go back to DO marker
-      mTokenIndex = mCallStack.top() + 1;
-
-      mCallStack.push( limit );
-      mCallStack.push( lcv );
-    } else {
-      // we're done, pop off DO index
-      mCallStack.pop();
-      ++mTokenIndex;
-    }
-  } else if( mTokens[mTokenIndex].second == "DO" ){
-    auto lcv = mDataStack.top();
-    mDataStack.pop();
-    auto limit = mDataStack.top();
-    mDataStack.pop();
-
-    mCallStack.push( mTokenIndex );
-    mCallStack.push( limit );
-    mCallStack.push( lcv );
-
-    ++mTokenIndex;
-  }
-}
-
 FORTH::FORTH()
-  : mDictionary(
-    {{".",
-      [this](){
-        cout << mDataStack.top();
+  : mBuiltins( { {".", bi_PRINT_TOP}, {"CR", bi_CR}, {"I", bi_I},
+                 {"EMIT", bi_EMIT}, {"DUP", bi_DUP}, {"SWAP", bi_SWAP},
+                 {".S", bi_PRINT_STACK}, {"OVER", bi_OVER}, {"DROP", bi_DROP},
+                 {"ROT", bi_ROT}, {".\"", bi_PRINT_STRING} } )
+  , mBuiltinops( {
+    {bi_CR,
+    [this](){
+      cout << endl;
+    }},
+    {bi_I,
+    [this](){
+      cout << mCallStack.top();
+    }},
+    {bi_EMIT,
+    [this](){
+      cout << char( mDataStack.top() & 0xFF );
 
-        mDataStack.pop();
+      mDataStack.pop();
+    }},
+    {bi_DUP,
+    [this](){
+      mDataStack.push( mDataStack.top() );
+    }},
+    {bi_SWAP,
+    [this](){
+      auto first = mDataStack.top();
+      mDataStack.pop();
+      auto second = mDataStack.top();
+      mDataStack.pop();
+
+      mDataStack.push( first );
+      mDataStack.push( second );
+    }},
+    {bi_PRINT_TOP,
+    [this](){
+      cout << mDataStack.top();
+    }},
+    {bi_PRINT_STACK,
+    [this](){
+      auto stack_cp = mDataStack;
+
+      while( !stack_cp.empty() ){
+        cout << stack_cp.top() << ' ';
+        stack_cp.pop();
       }
-    },
-    {".\"",
-      [this](){
-        while( mTokens[mTokenIndex].second.back() != '\"' ){
-          cout << mTokens[mTokenIndex].second;
+    }},
+    {bi_PRINT_STRING,
+    [this](){
+      auto count = mDataStack.top();
+      mDataStack.pop();
+      auto address = mDataStack.top();
+      mDataStack.pop();
 
-          ++mTokenIndex;
-        }
-
-        string last = mTokens[mTokenIndex].second;
-
-        cout << last.substr( 0, last.size() - 1 );
-
-        ++mTokenIndex;
+      for( int i = 0; i < count; ++i ){
+        cout << char( mMainMem[address + i] & 0xFF );
       }
-    },
-    {"CR",
-      [](){
-        cout << endl;
-      }
-    },
-    {"I",
-      [this](){
-        mDataStack.push( mCallStack.top() );
-      }
-    },
-    {"EMIT",
-      [this](){
-        cout << ( char ) mDataStack.top();
+    }},
+    {bi_OVER,
+    [this](){
+      auto top = mDataStack.top();
+      mDataStack.pop();
 
-        mDataStack.pop();
-      }
-    },
-    {"DUP",
-      [this](){
-        mDataStack.push( mDataStack.top() );
-      }
-    },
-    {"SWAP",
-      [this](){
-        auto top = mDataStack.top();
-        mDataStack.pop();
+      auto two = mDataStack.top();
 
-        auto two = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( top );
-        mDataStack.push( two );
-      }
-    },
-    {"OVER",
-      [this](){
-        auto top = mDataStack.top();
-        mDataStack.pop();
-
-        auto two = mDataStack.top();
-
-        mDataStack.push( top );
-        mDataStack.push( two );
-      }
-    },
-    {"DROP",
-      [this](){
-        mDataStack.pop();
-      }
-    },
-    {".S",
-      [this](){
-        auto stack_cp = mDataStack;
-
-        while( !stack_cp.empty() ){
-          cout << stack_cp.top() << " ";
-          stack_cp.pop();
-        }
-      }
-    },
-    {"ROT",
-      [this](){
-        //! @todo implement ROT
-      }
-    },
-    {"+",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( lhs + rhs );
-      }
-    },
-    {"-",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( lhs - rhs );
-      }
-    },
-    {"*",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( lhs * rhs );
-      }
-    },
-    {"/",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( lhs / rhs );
-      }
-    },
-    {">",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( -( lhs > rhs ) );
-      }
-    },
-    {"<",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( -( lhs < rhs ) );
-      }
-    },
-    {"=",
-      [this](){
-        auto lhs = mDataStack.top();
-        mDataStack.pop();
-
-        auto rhs = mDataStack.top();
-        mDataStack.pop();
-
-        mDataStack.push( -( lhs == rhs ) );
-      }
-    }
-  }){
+      mDataStack.push( top );
+      mDataStack.push( two );
+    }},
+    {bi_DROP,
+    [this](){
+      mDataStack.pop();
+    }},
+    {bi_ROT,
+    [this](){
+    }}
+  } ){
 }
 
 //! @todo create a 'microcode' instruction set
@@ -410,11 +147,13 @@ FORTH::FORTH()
 //    call 1, call 2 etc, where each function is assigned a number; after
 //    primary parsing is complete a second pass will be run to replace each
 //    call with the correct address.
+//
+//  This implementation does not allow for an interactive mode of operation.
 void
 FORTH::read( const std::string& text ){
   stringstream ss( text );
   string word;
-  decltype( mTokens ) newTokens;
+  vector<pair<TOKEN, string> > newTokens;
 
   while( ss >> word ){
     newTokens.emplace_back( classify( word ), word );
@@ -423,11 +162,16 @@ FORTH::read( const std::string& text ){
   vector<data_t> main_prog;
   map<string, address_t> fnAddresses;
   map<string, address_t> varAddresses;
+  map<string, address_t> stringAddresses;
   address_t prog_address_cntr = 0;
   address_t var_address_cntr = 0;
+  address_t jump_address;
 
   auto translate =
   [&]( pair<TOKEN, string> tok )->data_t{
+    stringstream ss( tok.second );
+    data_t num;
+
     switch( tok.first ){
     case TOKEN::FETCH:
       return u_LOAD;
@@ -437,11 +181,32 @@ FORTH::read( const std::string& text ){
       return u_STORE;
     break;
 
+    case TOKEN::BRANCH:
+      //! @todo calculate jump_address
+      return u_JUMP_Z | jump_address;
+    break;
+
+    case TOKEN::LOOP:
+      //! @todo calculate jump_address
+      return u_JUMP_Z | jump_address;
+    break;
+
+    case TOKEN::NUMBER:
+      ss >> num;
+      return u_PUSH | int( num ) << 8 ;
+    break;
+
     case TOKEN::WORD:
       if( varAddresses.count( tok.second ) > 0 ){
         return u_PUSH | ( varAddresses[tok.second] << 8 );
       } else if( fnAddresses.count( tok.second ) ){
         return u_CALL | ( fnAddresses[tok.second] << 8 );
+      } else if( stringAddresses.count( tok.second ) ){
+        return u_PUSH | ( stringAddresses[tok.second] << 8 );
+      } else if( mBuiltins.count( tok.second ) > 0 ){
+        if( tok.second == ".\"" ){
+        }
+        return u_BUILTIN | ( mBuiltins[tok.second] );
       } else {
         throw runtime_error( string( "Unrecognized word '" ) + tok.second + "'" );
       }
@@ -467,12 +232,15 @@ FORTH::read( const std::string& text ){
 
       ++iter;
       while( iter->first != TOKEN::DEFINE || iter->second != ";" ){
-        mProgMem[prog_address_cntr++] = translate( *iter );
+        mProgMem[prog_address_cntr++] = translate( *iter++ );
       }
     break;
 
     case TOKEN::FETCH:
     case TOKEN::STORE:
+    case TOKEN::BRANCH:
+    case TOKEN::LOOP:
+    case TOKEN::NUMBER:
     case TOKEN::WORD:
         main_prog.push_back( translate( tok ) );
     break;
@@ -490,41 +258,125 @@ FORTH::read( const std::string& text ){
 
 void
 FORTH::execute(){
-  while( mTokenIndex != mTokens.size() ){
-    switch( mTokens[mTokenIndex].first ){
-    case TOKEN::DEFINE:// word
-      handle_definition();
-    break;
+  decltype( mDataStack )::value_type one;
+  decltype( mDataStack )::value_type two;
 
-    case TOKEN::DECLARE:// variable
-      handle_declare();
-    break;
+  for( mAddressCounter = 0; mAddressCounter < mProgMem.size(); ++mAddressCounter ){
+    auto instruction = mProgMem[mAddressCounter];
+    decltype( mDataStack )::value_type index;
 
-    case TOKEN::FETCH:// @
-      handle_fetch();
-    break;
+    switch( instruction & 0xFF ){
+      case u_JUMP:
+        mAddressCounter = ( instruction >> 8 );
+      break;
+  
+      case u_JUMP_Z:
+        if( mDataStack.top() == 0 ){
+          mAddressCounter = ( instruction >> 8 );
+        }
 
-    case TOKEN::STORE:// !
-      handle_store();
-    break;
+        mDataStack.pop();
+      break;
+  
+      case u_CALL:
+        mCallStack.push( mAddressCounter + 1 );
+      break;
+  
+      case u_RETURN:
+        mAddressCounter = mCallStack.top();
+        mCallStack.pop();
+      break;
+  
+      case u_LOAD:
+        mDataStack.push( mMainMem[mDataStack.top()] );
+        mDataStack.pop();
+      break;
+  
+      case u_STORE:
+        index = mDataStack.top();
 
-    case TOKEN::WORD:
-      handle_word();
-    break;
+        mMainMem[index] = mDataStack.top();
+        mDataStack.pop();
+      break;
+  
+      case u_PUSH:
+        mDataStack.push( instruction>> 8 );
+      break;
+  
+      case u_POP:
+        mDataStack.pop();
+      break;
 
-    case TOKEN::BRANCH:
-      handle_branch();
-    break;
+      case u_ADD:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
 
-    case TOKEN::LOOP:
-      handle_loop();
-    break;
+        mDataStack.push( one + two );
+      break;
 
-    default:
-      //! @todo exception?
-      cout << "Unexpected token:\t" << mTokens[mTokenIndex].second << endl;
-      ++mTokenIndex;
-    break;
+      case u_SUB:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( one - two );
+      break;
+
+      case u_MUL:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( one * two );
+      break;
+
+      case u_DIV:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( one / two );
+      break;
+
+      case u_LT:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( -( one < two ) );
+      break;
+
+      case u_GT:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( -( one > two ) );
+      break;
+
+      case u_CMP:
+        one = mDataStack.top();
+        mDataStack.pop();
+        two = mDataStack.top();
+        mDataStack.pop();
+
+        mDataStack.push( -( one == two ) );
+      break;
+
+      case u_BUILTIN:
+        mBuiltinops[BUILT_INS( ( instruction >> 8 ) & 0xFF )]();
+      break;
+
+      default:
+        throw runtime_error( "Bad instruction" );
+      break;
     }
   }
 }

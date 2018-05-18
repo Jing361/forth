@@ -99,7 +99,6 @@ FORTH::read( const std::string& text ){
   }
 
   address_t prog_cntr = 0;
-  //address_t heap_cntr = mMainMem.size() - 1;
 
   for( auto iter = newTokens.begin(); iter != newTokens.end(); ++iter ){
     auto token = *iter;
@@ -108,11 +107,11 @@ FORTH::read( const std::string& text ){
 
     switch( token.first ){
       case TOKEN::STORE:
-        //mMainMem[prog_cntr++] = u_STORE;
+        mMainProg.push_back( u_STORE );
       break;
 
       case TOKEN::FETCH:
-        //mMainMem[prog_cntr++] = u_STORE;
+        mMainProg.push_back( u_STORE );
       break;
 
       case TOKEN::DEFINE:
@@ -121,14 +120,14 @@ FORTH::read( const std::string& text ){
 
       case TOKEN::WORD:
         if( mFuncDictionary.count( token.second ) > 0 ){
-          //mMainMem[prog_cntr++] = u_CALL;
-          //mMainMem[prog_cntr++] = mFuncDictionary[token.second];
+          mMainProg.push_back( u_CALL );
+          mMainProg.push_back( mFuncDictionary[token.second] );
         } else if( mVarDictionary.count( token.second ) > 0 ){
-          //mMainMem[prog_cntr++] = u_LIT;
-          //mMainMem[prog_cntr++] = mVarDictionary[token.second];
+          mMainProg.push_back( u_LIT );
+          mMainProg.push_back( mVarDictionary[token.second] );
         } else if( mConstDictionary.count( token.second ) > 0 ){
-          //mMainMem[prog_cntr++] = u_LIT;
-          //mMainMem[prog_cntr++] = mConstDictionary[token.second];
+          mMainProg.push_back( u_LIT );
+          mMainProg.push_back( mConstDictionary[token.second] );
         }
       break;
 
@@ -136,13 +135,13 @@ FORTH::read( const std::string& text ){
         ss << token.second;
         ss >> num;
 
-        //mMainMem[prog_cntr++] = u_LIT;
-        //mMainMem[prog_cntr++] = num;
+        mMainProg.push_back( u_LIT );
+        mMainProg.push_back( num );
       break;
 
       case TOKEN::DECLARE:
         ++iter;
-        //mVarDictionary[iter->second] = heap_cntr--;
+        mVarDictionary[iter->second] = mVariable_cntr++;
       break;
 
       case TOKEN::BRANCH:

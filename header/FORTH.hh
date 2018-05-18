@@ -62,10 +62,11 @@ public:
 
 class FORTH{
 private:
+  std::vector<data_t> mMainProg;
   std::map<std::string, address_t> mVarDictionary;
   std::map<std::string, data_t> mConstDictionary;
-  std::map<std::string, address_t> mFuncDictionary;
-  address_t variable_cntr = 0;
+  std::map<std::string, std::vector<data_t> > mFuncDictionary;
+  address_t mVariable_cntr = 0;
 
   std::vector<data_t>
   handle_define( std::vector<std::pair<TOKEN, std::string> >::iterator& iter );

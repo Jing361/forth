@@ -12,7 +12,7 @@ int main(){
   while( cout << ">" && getline( cin, line ) ){
     forth.read( line );
 
-    forth.execute();
+    //virtual_machine vm( forth.get_code() );
 
     cout << " ok" << endl;
   }

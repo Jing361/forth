@@ -201,16 +201,52 @@ FORTH::handle_branch(){
 
 void
 FORTH::handle_loop(){
+  mMainProg.push_back( u_OVER );
+  mMainProg.push_back( u_OVER );
   mMainProg.push_back( u_PUSH_CALL );
-  auto address = mMainProg.size();
+  mMainProg.push_back( u_PUSH_CALL );
+
+  // save address
+  auto do_address = mMainProg.size();
+
+  // copy LCVs
+  mMainProg.push_back( u_OVER );
+  mMainProg.push_back( u_OVER );
+
+  // save LCVs
+  mMainProg.push_back( u_PUSH_CALL );
+  mMainProg.push_back( u_PUSH_CALL );
+
+  // get difference
+  mMainProg.push_back( u_SUB );
+
+  // do branch
+  mMainProg.push_back( u_BRANCH );
+  auto br_address = mMainProg.size();
+  mMainProg.push_back( 0 );
 
   while( mTokIter->second != "LOOP" ){
     handle_primary();
   }
 
+  // get LCVs
   mMainProg.push_back( u_POP_CALL );
+  mMainProg.push_back( u_POP_CALL );
+
+  // increment
+  mMainProg.push_back( u_LIT );
+  mMainProg.push_back( 1 );
+  mMainProg.push_back( u_ADD );
+
+  // goto
+  mMainProg.push_back( u_LIT );
+  mMainProg.push_back( 0 );
   mMainProg.push_back( u_BRANCH );
-  mMainProg.push_back( address );
+  mMainProg.push_back( do_address );
+
+  // save escape point
+  auto loop_address = mMainProg.size();
+  mMainProg[br_address] = loop_address;
 }
 
 void

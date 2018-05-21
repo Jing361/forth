@@ -138,7 +138,9 @@ FORTH::handle_primary(){
     case TOKEN::WORD:
       if( mFuncDictionary.count( mTokIter->second ) > 0 ){
         mMainProg.push_back( u_CALL );
-        mMainProg.push_back( mFuncDictionary[mTokIter->second] );
+        // this is not how call works :(
+        mMainProg.insert( mMainProg.end(), mFuncDictionary[mTokIter->second].begin(),
+                                           mFuncDictionary[mTokIter->second].end() );
       } else if( mVarDictionary.count( mTokIter->second ) > 0 ){
         mMainProg.push_back( u_LIT );
         mMainProg.push_back( mVarDictionary[mTokIter->second] );
@@ -158,7 +160,7 @@ FORTH::handle_primary(){
 
     case TOKEN::DECLARE:
       ++mTokIter;
-      mVarDictionary[iter->second] = mVariable_cntr++;
+      mVarDictionary[mTokIter->second] = mVariable_cntr++;
     break;
 
     case TOKEN::BRANCH:
@@ -199,6 +201,16 @@ FORTH::handle_branch(){
 
 void
 FORTH::handle_loop(){
+  mMainProg.push_back( u_PUSH_CALL );
+  auto address = mMainProg.size();
+
+  while( mTokIter->second != "LOOP" ){
+    handle_primary();
+  }
+
+  mMainProg.push_back( u_POP_CALL );
+  mMainProg.push_back( u_BRANCH );
+  mMainProg.push_back( address );
 }
 
 void

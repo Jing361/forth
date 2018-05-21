@@ -106,6 +106,22 @@ FORTH::read( const std::string& text ){
 }
 
 void
+FORTH::handle_define(){
+  ++mTokIter;
+  string name = mTokIter->second;
+  ++mTokIter;
+
+  vector<data_t> code;
+
+  while( mTokIter->second != ";" ){
+    // handle_primary does not save the code in the dictionary
+    handle_primary();
+  }
+
+  ++mTokIter;
+}
+
+void
 FORTH::handle_primary(){
   stringstream ss;
   data_t num;

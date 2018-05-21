@@ -77,6 +77,9 @@ private:
   address_t mVariable_cntr = 0;
 
   void
+  handle_define();
+
+  void
   handle_primary();
 
   void

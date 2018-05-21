@@ -60,28 +60,32 @@ public:
   cycle();
 };
 
+using token = std::pair<TOKEN, std::string>;
+
 class FORTH{
 private:
   std::vector<data_t> mMainProg;
+  std::vector<token> mTokens;
+  decltype( mTokens )::iterator mTokIter;
+  //! @todo put dictionary in vm memory
+  // the dictionary is not being put into memory.  Putting it into memory
+  //  allows for there to be a context pointer, enabling different contexts to
+  //  overload words differently.
   std::map<std::string, address_t> mVarDictionary;
   std::map<std::string, data_t> mConstDictionary;
   std::map<std::string, std::vector<data_t> > mFuncDictionary;
   address_t mVariable_cntr = 0;
 
-  std::vector<data_t>
-  handle_define( std::vector<std::pair<TOKEN, std::string> >::iterator& iter );
+  void
+  handle_primary();
 
   void
-  handle_branch( std::vector<std::pair<TOKEN, std::string> >::iterator& iter );
+  handle_branch();
 
   void
-  handle_loop( std::vector<std::pair<TOKEN, std::string> >::iterator& iter );
-
-  void handle_primary();
+  handle_loop();
 
 public:
-  FORTH();
-
   void
   read( const std::string& text );
 

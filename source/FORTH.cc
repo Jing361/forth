@@ -32,21 +32,6 @@ classify( const std::string& word ){
   }
 }
 
-vector<data_t>
-FORTH::handle_define( vector<pair<TOKEN, string> >::iterator& iter ){
-}
-
-void
-FORTH::handle_branch( vector<pair<TOKEN, string> >::iterator& iter ){
-}
-
-void
-FORTH::handle_loop( vector<pair<TOKEN, string> >::iterator& iter ){
-}
-
-FORTH::FORTH(){
-}
-
 //! @todo create a 'microcode' instruction set
 //    to translate these tokens into for the 'real' forth machine to execute
 //  The new system will take forth program instructions, and compile them into
@@ -92,64 +77,25 @@ void
 FORTH::read( const std::string& text ){
   stringstream ss( text );
   string word;
-  vector<pair<TOKEN, string> > newTokens;
 
   while( ss >> word ){
-    newTokens.emplace_back( classify( word ), word );
+    mTokens.emplace_back( classify( word ), word );
   }
 
-  address_t prog_cntr = 0;
-
-  for( auto iter = newTokens.begin(); iter != newTokens.end(); ++iter ){
-    auto token = *iter;
-    stringstream ss;
-    data_t num;
-
-    switch( token.first ){
+  for( mTokIter = mTokens.begin(); mTokIter != mTokens.end(); ++mTokIter ){
+    switch( mTokIter->first ){
       case TOKEN::STORE:
-        mMainProg.push_back( u_STORE );
-      break;
-
       case TOKEN::FETCH:
-        mMainProg.push_back( u_STORE );
+      case TOKEN::WORD:
+      case TOKEN::NUMBER:
+      case TOKEN::DECLARE:
+      case TOKEN::BRANCH:
+      case TOKEN::LOOP:
+        handle_primary();
       break;
 
       case TOKEN::DEFINE:
-        handle_define( iter );
-      break;
-
-      case TOKEN::WORD:
-        if( mFuncDictionary.count( token.second ) > 0 ){
-          mMainProg.push_back( u_CALL );
-          mMainProg.push_back( mFuncDictionary[token.second] );
-        } else if( mVarDictionary.count( token.second ) > 0 ){
-          mMainProg.push_back( u_LIT );
-          mMainProg.push_back( mVarDictionary[token.second] );
-        } else if( mConstDictionary.count( token.second ) > 0 ){
-          mMainProg.push_back( u_LIT );
-          mMainProg.push_back( mConstDictionary[token.second] );
-        }
-      break;
-
-      case TOKEN::NUMBER:
-        ss << token.second;
-        ss >> num;
-
-        mMainProg.push_back( u_LIT );
-        mMainProg.push_back( num );
-      break;
-
-      case TOKEN::DECLARE:
-        ++iter;
-        mVarDictionary[iter->second] = mVariable_cntr++;
-      break;
-
-      case TOKEN::BRANCH:
-        handle_branch( iter );
-      break;
-
-      case TOKEN::LOOP:
-        handle_loop( iter );
+        handle_define();
       break;
 
       default:
@@ -157,6 +103,86 @@ FORTH::read( const std::string& text ){
       break;
     }
   }
+}
+
+void
+FORTH::handle_primary(){
+  stringstream ss;
+  data_t num;
+
+  switch( mTokIter->first ){
+    case TOKEN::STORE:
+      mMainProg.push_back( u_STORE );
+    break;
+
+    case TOKEN::FETCH:
+      mMainProg.push_back( u_FETCH );
+    break;
+
+    case TOKEN::WORD:
+      if( mFuncDictionary.count( mTokIter->second ) > 0 ){
+        mMainProg.push_back( u_CALL );
+        mMainProg.push_back( mFuncDictionary[mTokIter->second] );
+      } else if( mVarDictionary.count( mTokIter->second ) > 0 ){
+        mMainProg.push_back( u_LIT );
+        mMainProg.push_back( mVarDictionary[mTokIter->second] );
+      } else if( mConstDictionary.count( mTokIter->second ) > 0 ){
+        mMainProg.push_back( u_LIT );
+        mMainProg.push_back( mConstDictionary[mTokIter->second] );
+      }
+    break;
+
+    case TOKEN::NUMBER:
+      ss << mTokIter->second;
+      ss >> num;
+
+      mMainProg.push_back( u_LIT );
+      mMainProg.push_back( num );
+    break;
+
+    case TOKEN::DECLARE:
+      ++mTokIter;
+      mVarDictionary[iter->second] = mVariable_cntr++;
+    break;
+
+    case TOKEN::BRANCH:
+      handle_branch();
+    break;
+
+    case TOKEN::LOOP:
+      handle_loop();
+    break;
+
+    default:
+      throw runtime_error( "BAD TOKEN, GO AWAY" );
+    break;
+  }
+}
+
+void
+FORTH::handle_branch(){
+  mMainProg.push_back( u_BRANCH );
+  auto branch_address = mMainProg.size();
+  mMainProg.push_back( 0 );
+
+  ++mTokIter;
+
+  while( mTokIter->second != "THEN" && mTokIter->second != "ELSE" ){
+    handle_primary();
+  }
+
+  if( mTokIter->second == "THEN" ){
+  } else if( mTokIter->second == "ELSE" ){
+  }
+
+  ++mTokIter;
+
+  //off by one?
+  mMainProg[branch_address] = mMainProg.size();
+}
+
+void
+FORTH::handle_loop(){
 }
 
 void

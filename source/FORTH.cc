@@ -189,18 +189,29 @@ FORTH::handle_branch(){
     handle_primary();
   }
 
-  if( mTokIter->second == "THEN" ){
-  } else if( mTokIter->second == "ELSE" ){
+  mMainProg[branch_address] = mMainProg.size();
+
+  if( mTokIter->second == "ELSE" ){
+    mMainProg.push_back( u_LIT );
+    mMainProg.push_back( 0 );
+    mMainProg.push_back( u_BRANCH );
+    auto end_address = mMainProg.size();
+    mMainProg.push_back( 0 );
+
+    while( mTokIter->second != "THEN" ){
+      handle_primary();
+    }
+
+    mMainMem[end_address] = mMainMem.size();
   }
 
   ++mTokIter;
-
-  //off by one?
-  mMainProg[branch_address] = mMainProg.size();
 }
 
 void
 FORTH::handle_loop(){
+  ++mTokiter;
+
   mMainProg.push_back( u_OVER );
   mMainProg.push_back( u_OVER );
   mMainProg.push_back( u_PUSH_CALL );

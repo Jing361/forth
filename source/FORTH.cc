@@ -114,7 +114,8 @@ FORTH::handle_define(){
   vector<data_t> code;
 
   while( mTokIter->second != ";" ){
-    // handle_primary does not save the code in the dictionary
+    // code parsed in handle_primary is not saved in the dictionary, and an
+    //  memory references will not mean anything
     handle_primary();
   }
 
@@ -202,7 +203,7 @@ FORTH::handle_branch(){
       handle_primary();
     }
 
-    mMainMem[end_address] = mMainMem.size();
+    mMainProg[end_address] = mMainProg.size();
   }
 
   ++mTokIter;
@@ -210,12 +211,7 @@ FORTH::handle_branch(){
 
 void
 FORTH::handle_loop(){
-  ++mTokiter;
-
-  mMainProg.push_back( u_OVER );
-  mMainProg.push_back( u_OVER );
-  mMainProg.push_back( u_PUSH_CALL );
-  mMainProg.push_back( u_PUSH_CALL );
+  ++mTokIter;
 
   // save address
   auto do_address = mMainProg.size();
@@ -258,12 +254,22 @@ FORTH::handle_loop(){
   // save escape point
   auto loop_address = mMainProg.size();
   mMainProg[br_address] = loop_address;
+
+  // 'escape' (release LCVs)
+  mMainProg.push_back( u_POP_CALL );
+  mMainProg.push_back( u_POP_CALL );
+  mMainProg.push_back( u_DROP );
+  mMainProg.push_back( u_DROP );
 }
 
 void
 virtual_machine::cycle(){
   decltype( mDataStack )::value_type one;
   decltype( mDataStack )::value_type two;
+
+  if( !isRunning ){
+    return;
+  }
 
   switch( mMainMem[mPC] ){
     case u_STORE:
@@ -353,8 +359,9 @@ virtual_machine::cycle(){
       mDataStack.push( two );
     break;
 
-    //! @todo add a goto?
+    //! @todo differentiate between these two
     case u_BRANCH:
+    case u_BRANCH_Z:
       ++mPC;
 
       if( mDataStack.top() == 0 ){
@@ -379,6 +386,22 @@ virtual_machine::cycle(){
     case u_LIT:
       ++mPC;
       mDataStack.push( mMainMem[mPC] );
+    break;
+
+    //! @todo differentiate between these two
+    case u_BRANCH_R:
+    case u_BRANCH_R_Z:
+      ++mPC;
+
+      if( mDataStack.top() == 0 ){
+        mPC += mMainMem[mPC];
+      }
+
+      mDataStack.pop();
+    break;
+
+    case u_HALT:
+      isRunning = false;
     break;
 
     default:

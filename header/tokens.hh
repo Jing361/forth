@@ -29,12 +29,14 @@ enum u_CODE{
   u_POP_CALL,
   u_SWAP,
   u_BRANCH,
+  u_BRANCH_Z,
+  u_BRANCH_R,
+  u_BRANCH_R_Z,
   u_CALL,
   u_EXIT,
   u_LIT,
   u_IO,
-  //u_HALT,
-  //u_BRANCH_Z,
+  u_HALT,
 };
 
 enum BUILT_INS{

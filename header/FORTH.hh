@@ -45,6 +45,7 @@ private:
    * together.  any merging will basically change the merged part into a pointer
    * to main memory.
    */
+  bool isRunning = true;
   std::stack<data_t> mDataStack;
   std::stack<data_t> mCallStack;
   std::array<data_t, 1024> mMainMem;
@@ -73,6 +74,8 @@ private:
   //  overload words differently.
   std::map<std::string, address_t> mVarDictionary;
   std::map<std::string, data_t> mConstDictionary;
+  // perhaps words should be stored in dictionary and not parsed until we know
+  //  where to put them?
   std::map<std::string, std::vector<data_t> > mFuncDictionary;
   address_t mVariable_cntr = 0;
 
